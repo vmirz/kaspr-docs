@@ -8,34 +8,36 @@ import { OptionTable } from 'components/table'
 - [KasprAgent](#KasprAgent)
 - [KasprTask](#KasprTask)
 
-# KasprApp
+## KasprApp
 
-`KasprApp` is a program that runs components of a stream processing application.
+A program that runs components of a distributed stream processing application.
 
-It is composed of agents (stream processors), tasks, channels, tables, and web views to perform useful work.
-We can have multiple instances of an app to distribute a processing and scale in a horizontal manner. 
-An app can be viewed as a service in a microservice architecture. It’s common to have many different apps as part of a large or complex system where each app is responsible for a set of functions.
-
-```yaml filename=app.yml"
-  type: kafka_connector.py
-  properties:
-    cluster: dev-int-cluster-2
-    metadata:
-      name: offer-activity-function-sink-connector
-      namespace: kafka-system 
-      labels:
-        strimzi.io/cluster: int-kafka
-    spec:
-      class: asaintsever.httpsinkconnector.HttpSinkConnector
-      tasksMax: 6
-      autoRestart:
-        enabled: true
-      config:
-        topics: lao_offer_activity
-        consumer.override.auto.offset.reset: latest
-```
+<OptionTable
+  options={[
+    [
+      'apiVersion',
+      'string',
+      'kaspr.io/v1alpha1',
+      'Yes'
+    ],
+    [
+      'kind',
+      'string',
+      'KasprApp',
+      'Yes'
+    ],
+    [
+      'metadata',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta', label: 'ObjectMeta'},
+      'Metadata that all persisted resources must have.',
+      'Yes'
+    ]                             
+  ]}
+/>
 
 ## KasprAppSpec
+
+Specification of the desired settings of the application.
 
 <OptionTable
   options={[
@@ -89,8 +91,6 @@ An app can be viewed as a service in a microservice architecture. It’s common 
     ],                               
   ]}
 />
-
-Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
 
 ## KafkaAuthentication
 

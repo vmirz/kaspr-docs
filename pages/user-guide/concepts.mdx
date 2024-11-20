@@ -1,0 +1,30 @@
+# Concepts
+
+This section provides an overview of the concepts that are important to understand when working with Kaspr.
+
+## App (Application)
+
+An app ([KasprApp](/api-reference/v1alpha1#kasprapp)) is a program that runs components of a distributed stream processing application.  It is composed of agents (stream processors), tasks, channels, tables, and web views to perform useful work.
+We can have multiple instances of an app to distribute a processing and scale in a horizontal manner. 
+
+An app can be seen as a service in a microservice architecture. It's common to have many different apps, each responsible for a set of functions, that are part of a larger or complex system.
+...
+
+## Agent
+
+An agent ([KasprAgent](/api-reference/v1alpha1#kaspragent)) is a distributed system that processes the events in a stream, where an event has a key/value message and a stream is an unbounded sequence of events. An agent runs on an app and an app may have any many agents. An agent consumes from some input, such as a topic or channel, and performs one or more processing operations a single event or a collection of events.
+
+Streams can be divided equally in a round-robin manner, or partitioned by the message key in the event; this decides how the stream divides between available agent instances across all app instances.
+
+When an agent reads from a topic, the stream is partitioned based on the key of the message. For example, the stream could have keys that are account ids, and values that are high scores, then partitioning will decide that any message with the same account id as key, is always delivered to the same agent instance.
+
+Agent's are at the core of stream processing and can perform a many operations including transformations and aggregations, all out of the box. Further more, agents can define custom processing operators using arbitrary python code.
+
+## Task
+
+...
+
+## StateStore
+
+...
+

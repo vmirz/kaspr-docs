@@ -1,12 +1,25 @@
-# Kaspr
- 
-Kaspr makes it easy to build event driven applications on kubernetes. Kaspr is implemented as Kubernetes CRDs (Custom Resource Definition).
+import { Cards } from 'nextra/components'
 
-Kaspr has one and only one dependency: Kafka. Kafka serves as the main transport for all events processed by Kaspr.
+# Kaspr Documentation
+ 
+Kaspr seeks to dramatically simplify and ease the process of building real-time applications and microservices. Kaspr is implemented as Kubernetes CRDs (Custom Resource Definition) with native support for running arbitrary python code.
+
+Kaspr has only one dependency: Kafka. Kafka serves as the transport for all events processed by Kaspr. 
+Kaspr is most comparable to [Kafka Streams](https://kafka.apache.org/39/documentation/streams/), but it doesn't constrain you to a DSL (Domain Specific Language). Kaspr is designed for Kubernetes, flexiblity and ease of use.
 
 ## Use Cases
 
-- Real time data integration
-- Data enrichment
+- Event driven microservices
+- Real-time data integration
+- Real time analytics
 - Stateful computations
 - Real time cache
+
+## Quick Start
+
+
+<Cards.Card
+  title="Deploy Kaspr on Kubernetes"
+  href="/getting-started/installation"
+  arrow
+/>

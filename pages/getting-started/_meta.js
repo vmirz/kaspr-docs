@@ -1,6 +1,6 @@
 export default {
   introduction: 'Introduction',
   installation: "Installation",
-  compatability: 'Compatability',
+  compatibility: 'Compatibility',
   architecture: 'Architecture'
 }

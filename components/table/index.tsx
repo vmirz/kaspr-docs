@@ -28,7 +28,7 @@ export function OptionTable({ options }: { options: [string, any, string, any] }
               <td className="whitespace-pre py-2 font-mono text-s font-semibold leading-6 text-red-600 dark:text-red-500">
                 {field}
               </td>
-              <td className="whitespace-pre py-2 pl-6 font-mono text-xs font-semibold leading-6 text-slate-500 dark:text-slate-400">
+              <td className="whitespace-pre py-2 pl-6 font-mono text-s font-semibold leading-6 text-slate-500 dark:text-slate-400">
                 {typeof type === 'object' && type.href ? (
                   <Link className="text-blue-500 hover:text-blue-700 font-semibold" href={`${type.href}` }>
                     {type.label}
@@ -40,7 +40,9 @@ export function OptionTable({ options }: { options: [string, any, string, any] }
               <td className="py-2 pl-6">
                 <ReactMarkdown>{description}</ReactMarkdown>
               </td>
-              <td className="py-2 pl-6">{required}</td>
+              { required === 'Yes' ? (
+                <td className="py-2 pl-6 text-red-600 dark:text-red-500 font-semibold">{required}</td>) :(
+                <td className="py-2 pl-6">{required}</td>)}
             </tr>
           ))}
         </tbody>

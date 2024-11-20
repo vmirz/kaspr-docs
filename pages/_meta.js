@@ -1,6 +1,7 @@
 export default {
-  index: 'Home',
+  index: 'Overview',
   "getting-started": "Getting Started",
+  "user-guide": 'User Guide',
   "api-reference": 'API Reference',
   contact: 'Contact Us',
   about: 'About Us'
