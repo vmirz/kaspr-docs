@@ -2,5 +2,5 @@ export default {
   project: {
     link: 'https://github.com/shuding/nextra'
   },
-  logo: <b>Project</b>
+  logo: <b>Kaspr</b>
 }

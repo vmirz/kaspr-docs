@@ -1,7 +1,7 @@
 export default {
-  index: 'My Homepage',
-  concepts: 'Concepts',
-  reference: 'Reference',
+  index: 'Home',
+  "getting-started": "Getting Started",
+  "api-reference": 'API Reference',
   contact: 'Contact Us',
   about: 'About Us'
 }

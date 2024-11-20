@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* You can either write these in your global CSS file or inside a Tailwind config file if you prefer */
+.markdown {
+    @apply text-gray-800;
+  }
+  
+  .markdown h1 {
+    @apply text-2xl font-bold text-blue-600;
+  }
+  
+  .markdown p {
+    @apply mb-4;
+  }
+  
+  .markdown ul {
+    @apply list-disc pl-5;
+  }
+  
+  .markdown li {
+    @apply mb-1;
+  }
+  
+  .markdown a {
+    @apply text-blue-500 hover:text-blue-700;
+  }
+  

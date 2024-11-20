@@ -1,0 +1,168 @@
+import styles from './style.module.css'
+import { OptionTable } from 'components/table'
+
+# API Reference 
+
+## Resources Types
+- [KasprApp](#KasprApp)
+- [KasprAgent](#KasprAgent)
+- [KasprTask](#KasprTask)
+
+# KasprApp
+
+`KasprApp` is a program that runs components of a stream processing application.
+
+It is composed of agents (stream processors), tasks, channels, tables, and web views to perform useful work.
+We can have multiple instances of an app to distribute a processing and scale in a horizontal manner. 
+An app can be viewed as a service in a microservice architecture. It’s common to have many different apps as part of a large or complex system where each app is responsible for a set of functions.
+
+```yaml filename=app.yml"
+  type: kafka_connector.py
+  properties:
+    cluster: dev-int-cluster-2
+    metadata:
+      name: offer-activity-function-sink-connector
+      namespace: kafka-system 
+      labels:
+        strimzi.io/cluster: int-kafka
+    spec:
+      class: asaintsever.httpsinkconnector.HttpSinkConnector
+      tasksMax: 6
+      autoRestart:
+        enabled: true
+      config:
+        topics: lao_offer_activity
+        consumer.override.auto.offset.reset: latest
+```
+
+## KasprAppSpec
+
+<OptionTable
+  options={[
+    [
+      'version',
+      'string',
+      'The kaspr version. Defaults to the latest.',
+      'No'
+    ],
+    [
+      'replicas',
+      'integer',
+      'The number of desired instances. Defaults to 1.',
+      'No'
+    ],
+    [
+      'image',
+      'string',
+      'The container image to use. Defaults to the corresponding image of the version configuration.',
+      'No'
+    ],  
+    [
+      'bootstrapServers',
+      'string',
+      'Bootstrap server names to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.',
+      'Yes'
+    ],
+    [
+      'tls',
+      {'href': '#tls', label: 'TLS'},
+      'TLS configuration. Provide an empty entry `{}` to enable TLS or exclude the field to disable TLS.',
+      'No'
+    ],  
+    [
+      'authentication',
+      {'href': '#kafkaauthentication', label: 'KafkaAuthentication'},
+      'Authentication configuration for Kafka.',
+      'No'
+    ], 
+    [
+      'resources',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core', label: 'ResourceRequirements'},
+      'Compute Resources required by each instance on the application.',
+      'No'
+    ], 
+    [
+      'storage',
+      {'href': '#storagerequirements', label: 'StorageRequirements'},
+      'Disk storage required by each instance of the application.',
+      'Yes'
+    ],                               
+  ]}
+/>
+
+Storage configuration (disk). Cannot be updated. This property is required when node pools are not used.
+
+## KafkaAuthentication
+
+Kafka authentication configuration.
+
+<OptionTable
+  options={[
+    [
+      'type',
+      'string',
+      'The type of authentication to use. Must be one of `scram-sha-256`, `scram-sha-512`, or `plain`',
+      'No'
+    ],    
+    [
+      'username',
+      'string',
+      'Username used for authentication.',
+      'No'
+    ],
+    [
+      'passwordSecret',
+      {'href': '#passwordsecret', label: 'PasswordSecret'},
+      'Details of the kubernetes secret where the authentication password is stored.',
+      'No'
+    ]
+  ]}
+/>
+
+## PasswordSecret
+
+Kubernetes secret.
+
+<OptionTable
+  options={[
+    [
+      'secretName',
+      'string',
+      'The name of the Kubernetes secret resource containting the password.',
+      'Yes'
+    ],    
+    [
+      'passwordKey',
+      'string',
+      'The name of the key in the Secret under which the password is stored.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## StorageRequirements
+
+Disk storage configuration (disk).
+
+<OptionTable
+  options={[
+    [
+      'type',
+      'string',
+      'Storage type, must be `ephemeral` or `persistent-claim`',
+      'Yes'
+    ],    
+    [
+      'class',
+      'string',
+      'The storage class to use for dynamic volume allocation.',
+      'Yes'
+    ],
+    [
+      'deleteClaim',
+      'boolean',
+      'Specifies if the persistent volume claim has to be deleted when the app is undeployed.',
+      'No'
+    ]    
+  ]}
+/>
