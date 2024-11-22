@@ -4,5 +4,5 @@ export default {
   "user-guide": 'User Guide',
   "api-reference": 'API Reference',
   contact: 'Contact Us',
-  about: 'About Us'
+  copyright: 'Copyright'
 }

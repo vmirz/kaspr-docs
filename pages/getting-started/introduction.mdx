@@ -1,1 +1,31 @@
 # Introduction
+
+## How it works
+
+### Agents
+
+Process infinite streams in a straightforward manner. The concept of “agents” comes from the actor model, and means the stream processor can execute concurrently on on hundreds of machines at the same time.
+
+Deploy an agent using a Kubernetes resource and assign it to an app. Use regular Python to customize how a stream is processed streams and use your favorite python libraries.
+
+TODO: Update this example
+```yaml filename="agent.yaml"
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: my-agent
+  labels:
+    kaspr.io/app: my-app
+spec:
+    input:
+        topic: my-topic
+    processor:
+        pipeline:
+            - my-processor
+        operations:
+            - name: my-processor
+              map:
+                python: |
+                    def process(event):
+                    return event
+```
