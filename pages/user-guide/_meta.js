@@ -1,4 +1,5 @@
 export default {
   concepts: 'Concepts',
-  processors: 'Processors',
+  //processors: 'Processors',
+  "kafka-concepts": "Kafka Basics"
 }
