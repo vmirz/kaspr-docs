@@ -1,4 +1,4 @@
-# Kafka basics you need to know
+# Kafka - Basics you need to know
 
 **Kafka** is a distributed event streaming platform designed for high-throughput, fault-tolerant, and scalable data processing. It enables applications to publish, subscribe to, and process streams of events (or messages) in real-time. Kafka stores these events in topics, which are partitioned and replicated for reliability.
 
@@ -28,4 +28,4 @@ When a new consumer joins or leaves the group (or fails), Kafka triggers a rebal
 
 Log compaction in Kafka is a mechanism that ensures only the most recent value for each unique key in a topic is retained, while older records with the same key are deleted. This process helps reduce storage usage and keeps topics efficient for use cases like maintaining the current state of a system. Compaction occurs in the background, allowing Kafka to store a snapshot of the latest data while retaining older data for keys that don’t have newer updates. Unlike traditional retention, which deletes all messages after a certain time or size threshold, log compaction preserves the latest state indefinitely, ensuring durability and correctness for stateful applications.
 
-A [KasprTable](/api-reference/v1alpha1#kasprtable) in Kaspr uses log compaction to ensure table state can be recovered without a large space overhead.
+A [KasprTable](/api-reference/v1alpha1#kasprtable) uses log compaction to ensure table state can be recovered without a large space overhead.

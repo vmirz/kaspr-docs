@@ -1,5 +1,6 @@
 export default {
   concepts: 'Concepts',
   //processors: 'Processors',
-  "kafka-concepts": "Kafka Basics"
+  "kafka-basics": "Kafka - Basics you need to know",
+  agents: "Agents - Distributed stream processors"
 }
