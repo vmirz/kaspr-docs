@@ -5,7 +5,7 @@ const nextConfig = {
     unoptimized: true // mandatory, otherwise won't export
   },
   output: "export",
-  basePath: '/docs',
+  basePath: '/kaspr-docs',
 }
 
 const withNextra = nextra({
