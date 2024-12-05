@@ -1,11 +1,18 @@
 import nextra from 'nextra'
 
+const isProduction = process.env.NODE_ENV === "production";
+const basePath = isProduction ? "/kaspr-docs" : "";
+const output = isProduction ? "export": "standalone"
+
+console.log(process.env.NODE_ENV);
+
+
 const nextConfig = {
   images: {
     unoptimized: true // mandatory, otherwise won't export
   },
-  output: "export",
-  basePath: '/kaspr-docs',
+  output: output,
+  basePath: basePath,
 }
 
 const withNextra = nextra({

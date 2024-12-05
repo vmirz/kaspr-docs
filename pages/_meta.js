@@ -1,8 +1,14 @@
 export default {
-  index: 'Overview',
-  "getting-started": "Getting Started",
-  "user-guide": 'User Guide',
-  "api-reference": 'API Reference',
-  contact: 'Contact Us',
-  copyright: 'Copyright'
+    index: {
+        title: 'Home',
+        type: 'page',
+        display: 'hidden',
+        theme: {
+            layout: 'full'
+        }        
+    },
+    docs: {
+        title: "Documentation",
+        type: 'page'
+    },
 }
