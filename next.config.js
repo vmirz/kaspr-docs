@@ -12,12 +12,14 @@ const nextConfig = {
     unoptimized: true // mandatory, otherwise won't export
   },
   output: output,
-  basePath: basePath,
+  basePath: basePath
 }
 
 const withNextra = nextra({
   theme: 'nextra-theme-docs',
-  themeConfig: './theme.config.jsx'
+  themeConfig: './theme.config.jsx',
+  latex: true,
+  defaultShowCopyCode: true
 })
 
 export default withNextra(nextConfig)

@@ -1,11 +1,11 @@
 export default {
     index: {
-        title: 'Home',
+        title: 'Kaspr',
         type: 'page',
         display: 'hidden',
         theme: {
-            layout: 'full'
-        }        
+            layout: 'raw'
+        }   
     },
     docs: {
         title: "Documentation",
