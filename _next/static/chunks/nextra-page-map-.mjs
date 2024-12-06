@@ -106,6 +106,6 @@ export const pageMap = [{
   name: "index",
   route: "/",
   frontMatter: {
-    "sidebarTitle": "Index"
+    "title": "Kaspr – Event Streaming for Kubernetes"
   }
 }];
