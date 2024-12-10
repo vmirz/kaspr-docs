@@ -1,17 +1,22 @@
+import { Feature, Features } from '@components/features'
+import { ArrowRightIcon } from '@components/icons'
+import Image from 'next/image'
 import { Link } from 'nextra-theme-docs'
 import styles from './index.module.css'
+import docsCardDark from 'public/assets/card-1.dark.png'
+import docsCard from 'public/assets/card-1.png'
 
 export const IndexPage = () => (
     <div className="home-content">
         <div className="content-container">
         <h1 className="headline">
-            Stream Processing <br className="sm:block hidden" />
-            on Kubernetes
+            Build Stream Apps <br className="sm:block hidden" />
+            with Python & Kubernetes
         </h1>
         <p className="subtitle">
-            Simple, powerful and flexible kafka-based streaming {' '}
+            Simple, powerful and flexible event stream processing {' '}
             <br className="max-md:hidden" />
-            designed for kubernetes.{' '}
+            for kubernetes.{' '}
         </p>
         <p className="subtitle">
             <Link className={styles.cta} href="/docs">
@@ -210,5 +215,25 @@ export const IndexPage = () => (
         }
       }
     `}</style>
+    <div className="features-container">
+      <div className="content-container">
+      <Features>
+        <Feature
+            index={0}
+            large
+            centered
+            id="docs-card"
+            href="/docs/docs-theme/start"
+            >
+              <Image src={docsCard} alt="Background" loading="eager" />
+              <Image src={docsCardDark} alt="Background (Dark)" loading="eager" />
+              <h3>
+                Define stream processors <br className="show-on-mobile" />
+                as Kubernetes resources
+              </h3>
+          </Feature>        
+      </Features>
+      </div>    
+    </div>    
     </div>
 )
