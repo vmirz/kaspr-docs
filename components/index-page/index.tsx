@@ -231,7 +231,44 @@ export const IndexPage = () => (
                 Define stream processors <br className="show-on-mobile" />
                 as Kubernetes resources
               </h3>
-          </Feature>        
+          </Feature>
+          <Feature index={1} centered href="/docs/guide/image">
+            <h3>
+              Links and images are <br className="show-on-mobile" />
+              always <span className="font-light">optimized</span>
+            </h3>
+            <p className="text-left mb-8">
+              Nextra automatically converts Markdown links and images to use{' '}
+              <Link href="https://nextjs.org/docs/routing/introduction#linking-between-pages">
+                Next.js Link
+              </Link>{' '}
+              and{' '}
+              <Link href="https://nextjs.org/docs/basic-features/image-optimization#local-images">
+                Next.js Image
+              </Link>{' '}
+              when possible. No slow navigation or layout shift.
+            </p>
+            <div>
+              <div className={styles.optimization}>
+                <div style={{ fontSize: '.9rem' }} className="leading-8">
+                  <code>[Learn more](/more)</code>
+                  <br />
+                  <code>![Hero](/hero.png)</code>
+                </div>
+              </div>
+              <ArrowRightIcon
+                width="1.2em"
+                className="text-neutral-400 rotate-90 my-6 mx-auto"
+              />
+              <div className={styles.optimization}>
+                <div style={{ fontSize: '.9rem' }} className="leading-8">
+                  <code>{'<Link .../>'}</code>
+                  <br />
+                  <code>{'<Image .../>'}</code>
+                </div>
+              </div>
+            </div>
+          </Feature>                  
       </Features>
       </div>    
     </div>    
