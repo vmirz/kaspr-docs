@@ -97,14 +97,14 @@ export const IndexPage = () => (
       :global(#highlighting-card) {
         min-height: 300px;
         background-image: linear-gradient(to top, transparent, #fff 50%),
-          url(/assets/syntax-highlighting.svg);
-        background-size: 634px;
-        background-position: -6px calc(100% + 4px);
+          url(/assets/kafka.svg);
+        background-size: 534px;
+        background-position: 100px 0px calc(100% + 4px);
         background-repeat: no-repeat;
       }
       :global(.dark #highlighting-card) {
         background-image: linear-gradient(to top, transparent, #202020 50%),
-          url(/assets/syntax-highlighting.svg);
+          url(/assets/kafka.svg);
       }
       :global(.feat-darkmode) {
         min-height: 300px;
@@ -120,14 +120,13 @@ export const IndexPage = () => (
       :global(#search-card p) {
         max-width: 320px;
       }
-      :global(#search-card video) {
-        position: absolute;
-        right: 0;
-        top: 24px;
-        height: 430px;
-        pointer-events: none;
-        max-width: 60%;
+      :global(#search-card) {
+        background-image: url(/assets/event-system.svg);
+        background-position: -50px -100px;
       }
+      :global(.dark #search-card) {
+        background-image: url(/assets/event-system-dark.svg);
+      }        
       :global(#fs-card) {
         min-height: 240px;
       }
@@ -223,52 +222,75 @@ export const IndexPage = () => (
             large
             centered
             id="docs-card"
-            href="/docs/docs-theme/start"
+            href="/docs"
             >
               <Image src={docsCard} alt="Background" loading="eager" />
               <Image src={docsCardDark} alt="Background (Dark)" loading="eager" />
               <h3>
-                Define stream processors <br className="show-on-mobile" />
-                as Kubernetes resources
+                Stream processing <br className="show-on-mobile" />
+                with Kubernetes resources
               </h3>
           </Feature>
-          <Feature index={1} centered href="/docs/guide/image">
+          <Feature index={1} centered href="/docs">
             <h3>
-              Links and images are <br className="show-on-mobile" />
-              always <span className="font-light">optimized</span>
+              Deploy <br className="show-on-mobile" />
+              <span className="font-light">10x faster</span>
             </h3>
             <p className="text-left mb-8">
-              Nextra automatically converts Markdown links and images to use{' '}
-              <Link href="https://nextjs.org/docs/routing/introduction#linking-between-pages">
-                Next.js Link
-              </Link>{' '}
-              and{' '}
-              <Link href="https://nextjs.org/docs/basic-features/image-optimization#local-images">
-                Next.js Image
-              </Link>{' '}
-              when possible. No slow navigation or layout shift.
+            Build mission-critical real-time applications and services in 
+            minutes, not weeks or months.       
+            <br />
             </p>
-            <div>
-              <div className={styles.optimization}>
-                <div style={{ fontSize: '.9rem' }} className="leading-8">
-                  <code>[Learn more](/more)</code>
-                  <br />
-                  <code>![Hero](/hero.png)</code>
-                </div>
-              </div>
-              <ArrowRightIcon
-                width="1.2em"
-                className="text-neutral-400 rotate-90 my-6 mx-auto"
-              />
-              <div className={styles.optimization}>
-                <div style={{ fontSize: '.9rem' }} className="leading-8">
-                  <code>{'<Link .../>'}</code>
-                  <br />
-                  <code>{'<Image .../>'}</code>
-                </div>
-              </div>
+            <h3>
+              Govern <span className="font-light">centrally</span><br className="show-on-mobile" />
+            </h3>
+            <p className="text-left mb-8">
+            Maintain quality and consistency by enforcing standardized patterns and best practices. 
+            Streamline consistency for architecture design, deployments, logging, and observability.
+            <br />
+            </p>   
+
+            <h3>
+              Enable <span className="font-light">development</span><br className="show-on-mobile" />
+            </h3>
+            <p className="text-left mb-8">
+            Simplify development by eliminating boilerplate code and 
+            focus on writing business logic. Use pre-built components 
+            or your favorite Python libraries.
+            <br />
+            </p>                        
+          </Feature>
+          <Feature
+            index={2}
+            id="highlighting-card"
+            href="/docs"
+          >
+            <h3>
+              Kafka <br className="show-on-mobile" />
+              <span className="font-light">is all you need</span>
+            </h3>
+            <p>
+                No separate processing cluster required. Input, output, and state data is stored in Kafka.
+            </p>
+          </Feature>    
+          <Feature
+            index={6}
+            large
+            id="search-card"
+            href="/docs"
+          >
+            <div style={{ zIndex: 2 }}>
+              <h3>
+                Event-driven systems, <br />
+                built effortlessly
+              </h3>
+              <p>
+                Compose event-driven systems using Apps and Agents
+                that process infinite streams of events.{' '}
+              </p>
             </div>
-          </Feature>                  
+            <div className="absolute size-full inset-0 hidden sm:block bg-[linear-gradient(to_right,white_250px,_transparent)] dark:bg-[linear-gradient(to_right,#202020_250px,_transparent)] z-[1]" />
+          </Feature>                
       </Features>
       </div>    
     </div>    
