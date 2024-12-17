@@ -126,19 +126,19 @@ export const IndexPage = () => (
       :global(.feat-darkmode h3) {
         font-size: 48px;
       }
-      :global(#search-card) {
+      :global(#event-sys-card) {
         display: flex;
         flex-direction: column;
         justify-content: center;
       }
-      :global(#search-card p) {
+      :global(#event-sys-card p) {
         max-width: 320px;
       }
-      :global(#search-card) {
+      :global(#event-sys-card) {
         background-image: url(${basePath}/assets/event-system.svg);
         background-position: -50px -100px;
       }
-      :global(.dark #search-card) {
+      :global(.dark #event-sys-card) {
         background-image: url(${basePath}/assets/event-system-dark.svg);
       }        
       :global(#fs-card) {
@@ -170,7 +170,7 @@ export const IndexPage = () => (
           font-size: 4vw;
           font-size: min(48px, max(4vw, 30px));
         }
-        :global(#search-card video) {
+        :global(#event-sys-card video) {
           aspect-ratio: 787/623;
           height: auto;
         }
@@ -182,10 +182,10 @@ export const IndexPage = () => (
         :global(#docs-card) {
           aspect-ratio: 135/86;
         }
-        :global(#search-card) {
+        :global(#event-sys-card) {
           aspect-ratio: 8/3;
         }
-        :global(#search-card h3) {
+        :global(#event-sys-card h3) {
           text-align: left;
         }
         :global(#highlighting-card) {
@@ -212,24 +212,24 @@ export const IndexPage = () => (
         }
       }
       @media screen and (max-width: 640px) {
-        :global(#search-card) {
+        :global(#event-sys-card) {
           aspect-ratio: 2.5/2;
           justify-content: flex-start;
           align-items: stretch;
           min-height: 350px;
         }
-        :global(#search-card h3) {
+        :global(#event-sys-card h3) {
           text-align: center;
         }
-        :global(#search-card p) {
+        :global(#event-sys-card p) {
           max-width: 100%;
         }
-        :global(#search-card video) {
+        :global(#event-sys-card video) {
           position: relative;
           margin: 0.75em -1.75em 0;
           max-width: calc(100% + 3.5em);
         }
-        :global(.dark #search-card video) {
+        :global(.dark #event-sys-card video) {
           mix-blend-mode: lighten;
         }
       }
@@ -296,7 +296,7 @@ export const IndexPage = () => (
           <Feature
             index={3}
             large
-            id="search-card"
+            id="event-sys-card"
             href="/docs"
           >
             <div style={{ zIndex: 2 }}>
@@ -309,7 +309,7 @@ export const IndexPage = () => (
                 that process infinite streams of events.{' '}
               </p>
             </div>
-            <div className="absolute size-full inset-0 hidden sm:block bg-[linear-gradient(to_right,white_250px,_transparent)] dark:bg-[linear-gradient(to_right,#202020_250px,_transparent)] z-[1]" />
+            <div className="absolute size-full inset-0 bg-[linear-gradient(to_right,white_250px,_transparent)] dark:bg-[linear-gradient(to_right,#202020_250px,_transparent)] z-[1]" />
           </Feature> 
           <Feature
             index={4}
@@ -326,7 +326,7 @@ export const IndexPage = () => (
           </Feature>
           <Feature index={5} href="/docs">
             <h3>
-              Stateful as simple 
+              Stateful as easy 
               as stateless <br className="show-on-mobile" />
             </h3>
             <p className="mb-4">
