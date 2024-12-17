@@ -106,6 +106,18 @@ export const IndexPage = () => (
         background-image: linear-gradient(to top, transparent, #202020 50%),
           url(/assets/kafka.svg);
       }
+
+      :global(#feature-1-card) {
+        min-height: 300px;
+        background-image: linear-gradient(to top, transparent, #fff 50%)
+        background-size: 534px;
+        background-position: 100px 0px calc(100% + 4px);
+        background-repeat: no-repeat;
+      }
+      :global(.dark #feature-1-card) {
+        background-image: linear-gradient(to top, transparent, #202020 50%)
+      }
+
       :global(.feat-darkmode) {
         min-height: 300px;
       }
@@ -149,6 +161,9 @@ export const IndexPage = () => (
         :global(#highlighting-card) {
           aspect-ratio: auto;
         }
+        :global(#feature-1-card) {
+          aspect-ratio: auto;
+        }          
         :global(.feat-darkmode h3) {
           font-size: 4vw;
           font-size: min(48px, max(4vw, 30px));
@@ -174,6 +189,9 @@ export const IndexPage = () => (
         :global(#highlighting-card) {
           background-size: 136%;
         }
+        :global(#feature-1-card) {
+          background-size: 136%;
+        }          
         :global(#a11y-card) {
           background-image: url(/assets/high-contrast.png);
           background-position: center 160px;
@@ -242,7 +260,7 @@ export const IndexPage = () => (
             <br />
             </p>
             <h3>
-              Govern <span className="font-light">centrally</span><br className="show-on-mobile" />
+              Govern <br className="show-on-mobile" /><span className="font-light">centrally</span>
             </h3>
             <p className="text-left mb-8">
             Maintain quality and consistency by enforcing standardized patterns and best practices. 
@@ -251,7 +269,7 @@ export const IndexPage = () => (
             </p>   
 
             <h3>
-              Enable <span className="font-light">development</span><br className="show-on-mobile" />
+              Enable <br className="show-on-mobile" /><span className="font-light">teams</span>
             </h3>
             <p className="text-left mb-8">
             Simplify development by eliminating boilerplate code and 
@@ -274,7 +292,7 @@ export const IndexPage = () => (
             </p>
           </Feature>    
           <Feature
-            index={6}
+            index={3}
             large
             id="search-card"
             href="/docs"
@@ -282,7 +300,7 @@ export const IndexPage = () => (
             <div style={{ zIndex: 2 }}>
               <h3>
                 Event-driven systems, <br />
-                built effortlessly
+                <span className="font-light">built effortlessly</span>
               </h3>
               <p>
                 Compose event-driven systems using Apps and Agents
@@ -290,7 +308,68 @@ export const IndexPage = () => (
               </p>
             </div>
             <div className="absolute size-full inset-0 hidden sm:block bg-[linear-gradient(to_right,white_250px,_transparent)] dark:bg-[linear-gradient(to_right,#202020_250px,_transparent)] z-[1]" />
-          </Feature>                
+          </Feature> 
+          <Feature
+            index={4}
+            id="feature-1-card"
+            href="/docs"
+          >
+            <h3>
+              No DSL or Java required
+            </h3>
+            <p>
+              Simply define Kubernetes custom resources and write in Python when 
+              needed—no need for a domain-specific language or Java/Scala code.
+            </p>
+          </Feature>
+          <Feature index={5} href="/docs">
+            <h3>
+              Stateful as simple 
+              as stateless <br className="show-on-mobile" />
+            </h3>
+            <p className="mb-4">
+            Power apps with <span className="font-bold">fault-tolerant</span> local state, which enables very 
+            fast and efficient stateful operations like data lookups and aggregations.
+            </p>
+          </Feature>  
+
+          <Feature
+            index={6}
+            centered
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundImage: 'url(/assets/gradient-bg.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              color: '#fff'
+            }}
+            href="/docs"
+          >
+            <svg 
+            width="200px" 
+            height="200px" 
+            viewBox="0 0 192 192" 
+            xmlns="http://www.w3.org/2000/svg"
+            style={{
+              filter: 'drop-shadow(0 2px 10px rgba(0, 0, 0, .1))'
+            }}            
+                fill="none">
+                <circle cx="25" cy="96" r="9" fill="#fff" />
+                <circle cx="167" cy="96" r="9" fill="#fff" />
+                <path stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"
+                    d="M58 96h76m0 0L98 60m36 36-36 36" />
+            </svg>
+              <h3
+                style={{
+                  textShadow: '0 2px 4px rgb(0 0 0 / 20%)'
+                }}
+              >Exactly-once processing,
+              <span className="font-light"> out-of-the-box.</span>
+              </h3>
+          </Feature>                                        
       </Features>
       </div>    
     </div>    
