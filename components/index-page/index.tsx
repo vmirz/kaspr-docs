@@ -6,6 +6,8 @@ import styles from './index.module.css'
 import docsCardDark from 'public/assets/card-1.dark.png'
 import docsCard from 'public/assets/card-1.png'
 
+const basePath = '/kaspr-docs';
+
 export const IndexPage = () => (
     <div className="home-content">
         <div className="content-container">
@@ -97,14 +99,14 @@ export const IndexPage = () => (
       :global(#highlighting-card) {
         min-height: 300px;
         background-image: linear-gradient(to top, transparent, #fff 50%),
-          url(/assets/kafka.svg);
+          url(${basePath}/assets/kafka.svg);
         background-size: 534px;
         background-position: 100px 0px calc(100% + 4px);
         background-repeat: no-repeat;
       }
       :global(.dark #highlighting-card) {
         background-image: linear-gradient(to top, transparent, #202020 50%),
-          url(/assets/kafka.svg);
+          url(${basePath}/assets/kafka.svg);
       }
 
       :global(#feature-1-card) {
@@ -133,11 +135,11 @@ export const IndexPage = () => (
         max-width: 320px;
       }
       :global(#search-card) {
-        background-image: url(/assets/event-system.svg);
+        background-image: url(${basePath}/assets/event-system.svg);
         background-position: -50px -100px;
       }
       :global(.dark #search-card) {
-        background-image: url(/assets/event-system-dark.svg);
+        background-image: url(${basePath}/assets/event-system-dark.svg);
       }        
       :global(#fs-card) {
         min-height: 240px;
@@ -148,13 +150,13 @@ export const IndexPage = () => (
         min-width: 155px;
       }
       :global(#a11y-card) {
-        background-image: url(/assets/high-contrast.png);
+        background-image: url(${basePath}/assets/high-contrast.png);
         background-position: -160px 160px;
       }
       @media screen and (max-width: 1300px) {
         :global(#a11y-card) {
           background-image: linear-gradient(to bottom, white, transparent),
-            url(/assets/high-contrast.png);
+            url(${basePath}/assets/high-contrast.png);
         }
       }
       @media screen and (max-width: 1200px) {
@@ -193,7 +195,7 @@ export const IndexPage = () => (
           background-size: 136%;
         }          
         :global(#a11y-card) {
-          background-image: url(/assets/high-contrast.png);
+          background-image: url(${basePath}/assets/high-contrast.png);
           background-position: center 160px;
         }
       }
@@ -341,7 +343,7 @@ export const IndexPage = () => (
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundImage: 'url(/assets/gradient-bg.jpg)',
+              backgroundImage: `url(${basePath}/assets/gradient-bg.jpg)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               color: '#fff'
