@@ -111,9 +111,9 @@ export const IndexPage = () => (
 
       :global(#feature-1-card) {
         min-height: 300px;
-        background-image: linear-gradient(to top, transparent, #fff 50%)
-        background-size: 534px;
-        background-position: 100px 0px calc(100% + 4px);
+        background-image: linear-gradient(to top, transparent, #fff 50%);
+        background-size: 904px;
+        background-position: center 0px;
         background-repeat: no-repeat;
       }
       :global(.dark #feature-1-card) {
@@ -246,9 +246,12 @@ export const IndexPage = () => (
             >
               <Image src={docsCard} alt="Background" loading="eager" />
               <Image src={docsCardDark} alt="Background (Dark)" loading="eager" />
-              <h3>
-                Stream processing <br className="show-on-mobile" />
-                with Kubernetes resources
+              <h3
+                style={{
+                  textShadow: '0 2px 4px rgb(0 0 0 / 20%)'
+                }}
+              >Stream processing<br className="show-on-mobile" />
+              <span className="font-light"> using kubernetes resources.</span>
               </h3>
           </Feature>
           <Feature index={1} centered href="/docs">
@@ -309,7 +312,7 @@ export const IndexPage = () => (
                 that process infinite streams of events.{' '}
               </p>
             </div>
-            <div className="absolute size-full inset-0 bg-[linear-gradient(to_right,white_250px,_transparent)] dark:bg-[linear-gradient(to_right,#202020_250px,_transparent)] z-[1]" />
+            <div className="absolute size-full inset-0 bg-[linear-gradient(to_right,white_350px,_transparent)] dark:bg-[linear-gradient(to_right,#202020_350px,_transparent)] z-[1]" />
           </Feature> 
           <Feature
             index={4}
