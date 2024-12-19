@@ -1,8 +1,10 @@
+import { KasprLogo } from '@components/icons'
+
 export default {
   project: {
     link: 'https://github.com/TotalWineLabs/kaspr'
   },
-  logo: <b>Kaspr</b>,
+  logo: KasprLogo,
   docsRepositoryBase: 'https://github.com/vmirz/kaspr-docs',
   head: (
     <>
