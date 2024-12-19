@@ -371,8 +371,8 @@ export const IndexPage = () => (
                 style={{
                   textShadow: '0 2px 4px rgb(0 0 0 / 20%)'
                 }}
-              >Exactly-once processing,
-              <span className="font-light"> out-of-the-box.</span>
+              >Exactly-once processing, <br className="show-on-mobile" />
+              <span className="font-light">by default</span>
               </h3>
           </Feature>                                        
       </Features>
