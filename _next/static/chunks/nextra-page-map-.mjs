@@ -41,12 +41,6 @@ export const pageMap = [{
         "sidebarTitle": "Architecture"
       }
     }, {
-      name: "compatibility",
-      route: "/docs/getting-started/compatibility",
-      frontMatter: {
-        "sidebarTitle": "Compatibility"
-      }
-    }, {
       name: "installation",
       route: "/docs/getting-started/installation",
       children: [{
@@ -57,13 +51,13 @@ export const pageMap = [{
         frontMatter: {
           "sidebarTitle": "Helm"
         }
-      }, {
-        name: "yaml",
-        route: "/docs/getting-started/installation/yaml",
-        frontMatter: {
-          "sidebarTitle": "Yaml"
-        }
       }]
+    }, {
+      name: "installation",
+      route: "/docs/getting-started/installation",
+      frontMatter: {
+        "sidebarTitle": "Installation"
+      }
     }, {
       name: "introduction",
       route: "/docs/getting-started/introduction",
