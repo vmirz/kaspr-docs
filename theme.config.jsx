@@ -5,6 +5,7 @@ export default {
     link: 'https://github.com/TotalWineLabs/kaspr'
   },
   logo: KasprLogo,
+  footer: false,
   docsRepositoryBase: 'https://github.com/vmirz/kaspr-docs',
   head: (
     <>
