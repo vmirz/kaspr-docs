@@ -1,6 +1,5 @@
 export default {
   introduction: 'Introduction',
-  installation: "Installation",
-  compatibility: 'Compatibility',
+  installation: "Install Kaspr Operator",
   architecture: 'Architecture'
 }

@@ -16,7 +16,7 @@
   "bugs": {
     "url": "https://github.com/shuding/nextra-docs-template/issues"
   },
-  "homepage": "https://vmirz.github.io/kaspr-docs",
+  "homepage": "https://vmirz.github.io/",
   "dependencies": {
     "@sindresorhus/slugify": "^2.2.1",
     "next": "^13.5.7",

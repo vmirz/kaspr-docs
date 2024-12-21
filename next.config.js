@@ -37,4 +37,5 @@ const withNextra = nextra({
   defaultShowCopyCode: true
 })
 
+export { basePath }
 export default withNextra(nextConfig)

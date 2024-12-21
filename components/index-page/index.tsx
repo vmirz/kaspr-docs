@@ -5,8 +5,7 @@ import { Link } from 'nextra-theme-docs'
 import styles from './index.module.css'
 import docsCardDark from 'public/assets/card-1.dark.png'
 import docsCard from 'public/assets/card-1.png'
-
-const basePath = '/kaspr-docs';
+import { basePath } from 'utils/config'
 
 export const IndexPage = () => (
     <div className="home-content">
@@ -21,7 +20,7 @@ export const IndexPage = () => (
             for kubernetes.{' '}
         </p>
         <p className="subtitle">
-            <Link className={styles.cta} href="/docs">
+            <Link className={styles.cta} href='/docs'>
             Get started <span>→</span>
             </Link>
         </p>
