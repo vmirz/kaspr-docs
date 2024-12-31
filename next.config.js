@@ -2,7 +2,7 @@ import path from 'node:path'
 import nextra from 'nextra'
 
 const isProduction = process.env.NODE_ENV === "production";
-const basePath = isProduction ? "/kaspr-docs" : "/kaspr-docs";
+const basePath = isProduction ? "" : "";
 const output = isProduction ? "export": "standalone"
 
 console.log(process.env.NODE_ENV);

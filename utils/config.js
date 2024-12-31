@@ -1,1 +1,1 @@
-export const basePath = '/kaspr-docs';
+export const basePath = '';
