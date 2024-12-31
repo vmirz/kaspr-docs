@@ -10,7 +10,7 @@ Use helm to install and manage `kaspr-operator` and related CRDs in your Kuberne
 - Kubernetes 1.16+
 - Helm 3.x
 
-## Operator Installation Modes
+## Installation Modes
 
 The Kaspr Operator can be installed in either cluster-scoped or namespace-scoped mode.
 * When installed in cluster-scoped mode, the operator will watch for Kaspr resources across all namespaces.
@@ -20,7 +20,7 @@ By default, the operator is installed in cluster-scoped mode. To install the ope
 
 Depending on which mode is used, either the `ClusterRole` or `Role` and `ClusterRoleBinding` or `RoleBinding` resources are created respectively.
 
-## Steps
+## Installation Steps
 
 <Steps>
 ### Download the helm chart
@@ -32,8 +32,22 @@ cd kaspr-helm
  
 ### Install the operator
  
+The general syntax for helm installation is: 
+```bash
+helm install <release> <chart> --namespace <namespace> --create-namespace [--set <other_parameters>]
+```
+
+The variables specified in the command are as follows:
+
+* `<chart>` A path to a packaged chart, a path to an unpacked chart directory or a URL.
+* `<release>` A name to identify and manage the Helm chart once installed.
+* `<namespace>` The namespace in which the chart is to be installed.
+* Default configuration values can be changed using one or more `--set <parameter>=<value>` arguments. Alternatively, you can specify several parameters in a custom values file using the --values `<file>` argument.
+
+
 ```bash
 helm install kaspr-operator charts/operator \
+    --set operator.watchAnyNamespace=true \
     -n kaspr-operator \
     --create-namespace
 ```
@@ -48,7 +62,7 @@ for all possible configuration options.
 
 ## Custom Resource Definitions (CRDs)
 
-CRDs are included in the operator helm chart and are automatically installed when installing the operator. 
+CRDs are included in the operator helm chart and will be automatically installed with the operator.
 However, they need to be manually updated or removed when necessary.
 
 * Updating CRDs
