@@ -1,0 +1,33 @@
+import { Cards } from 'nextra/components'
+import { basePath } from 'utils/config'
+
+# Kaspr Documentation
+ 
+Kaspr dramatically simplifies the creation of real-time, event-driven applications and microservices. Built as a set of Kubernetes CRDs (Custom Resource Definitions), it provides a straightforward framework for building scalable streaming and event processing systems.
+
+Kaspr has a single dependency: Kafka, which serves as the persistence and transport layer for all events processed by the system. While similar to [Kafka Streams](https://kafka.apache.org/39/documentation/streams/), Kaspr offers greater flexibility by not being limited to a domain-specific language (DSL). Kaspr is optimized for Kubernetes, offering both ease of use and scalability.
+
+## Use Cases
+
+- Event driven microservices
+- Real-time data integration
+- Real-time analytics
+- Stateful computations
+- Materialized views/cache
+
+## Quick Start
+ 
+<Cards>
+  <Cards.Card
+    title="Install Kaspr Operator"
+    href={`/docs/getting-started/installation/helm`}
+  />
+  <Cards.Card
+    title="Concepts"
+    href={`/docs/user-guide/concepts`}
+  />
+  <Cards.Card
+    title="CRD Reference"
+    href={`/docs/api-reference/v1alpha1`}
+  />
+</Cards>
