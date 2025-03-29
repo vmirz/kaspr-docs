@@ -18,20 +18,179 @@ A program that runs components of a distributed stream processing application.
       'apiVersion',
       'string',
       'kaspr.io/v1alpha1',
+      '',
       'Yes'
     ],
     [
       'kind',
       'string',
       'KasprApp',
+      '',
       'Yes'
     ],
     [
       'metadata',
       {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta', label: 'ObjectMeta'},
+      '{}',
       'Metadata that all persisted resources must have.',
       'Yes'
     ]                             
+  ]}
+/>
+
+## KasprAppConfig
+
+`KasprApp` configuration parameters.
+
+<OptionTable
+  options={[
+    [
+      'topicReplicationFactor',
+      'integer',
+      '3',
+      'The default replication factor for topics created by the application.',
+      'No'
+    ],
+    [
+      'topicPartitions',
+      'integer',
+      '3',
+      'Default number of partitions for topics created by the application.',
+      'No'
+    ],
+    [
+      'topicAllowDeclare',
+      'boolean',
+      'false',
+      'This setting controls whether or not creation of topics is allowed.',
+      'No'
+    ],
+    [
+      'schedulerEnabled',
+      'boolean',
+      'false',
+      'This setting controls whether or not the message scheduler is enabled.',
+      'No'
+    ], 
+    [
+      'schedulerDebugStatsEnabled',
+      'boolean',
+      'false',
+      'This setting controls whether or not scheduler debug statistics are printed to log.',
+      'No'
+    ],
+    [
+      'schedulerTopicPartitions',
+      'integer',
+      '',
+      'Default number of partitions for internal scheduler related topics. Defaults to general topic partition configuration if not set.',
+      'No'
+    ],
+    [
+      'schedulerCheckpointSaveIntervalSeconds',
+      'number:float',
+      '1.3',
+      'How often we save checkpoint to storage (and to changelog topic)',
+      'No'
+    ],
+    [
+      'schedulerDispatcherDefaultCheckpointLookbackDays',
+      'integer',
+      '7',
+      'Number of days the dispatcher will look back from current date to seek starting a point for dispatching messages when an checkpoint is not found. This is mostly used during initial app deployment.',
+      'No'
+    ],
+    [
+      'schedulerDispatcherCheckpointInterval',
+      'number:float',
+      '10.0',
+      "How often we checkpoint the dispacher's location in the timetable (in seconds).",
+      'No'
+    ],
+    [
+      'schedulerJanitorCheckpointInterval',
+      'number:float',
+      '10.0',
+      "How often we checkpoint the janitor's location in the timetable (in seconds).",
+      'No'
+    ], 
+    [
+      'schedulerJanitorCleanIntervalSeconds',
+      'number:float',
+      '3.0',
+      "How often the janitor attempts to clean.",
+      'No'
+    ],
+    [
+      'schedulerJanitorHighwaterOffsetSeconds',
+      'number:float',
+      '14400.0',
+      "Number of seconds the janitor trails current from the highwater timetable location.",
+      'No'
+    ],
+    [
+      'storeRocksdbWriteBufferSize',
+      'integer',
+      '67108864',
+      "This is the maximum write buffer size. It represents the amount of data to build up in memory before converting to a sorted on-disk file. The default is 64 MB.",
+      'No'
+    ], 
+    [
+      'storeRocksdbMaxWriteBufferNumber',
+      'integer',
+      '3',
+      "Maximum number of write buffers (memtables) that can be built in memory at the same time.",
+      'No'
+    ],
+    [
+      'storeRocksdbTargetFileSizeBase',
+      'integer',
+      '67108864',
+      "Target size for files at level-1 in the LSM tree. Used to determine the size of the SST (Sorted String Table) files that RocksDB generates during compactions. The default is 64 MB.",
+      'No'
+    ],
+    [
+      'storeRocksdbBlockCacheSize',
+      'integer',
+      '',
+      "Size for caching uncompressed data. Defauls to about 30% of application's total memory budget",
+      'No'
+    ],
+    [
+      'storeRocksdbBlockCacheCompressedSize',
+      'integer',
+      '268435456',
+      "Size for caching compressed data. Defaults to 254MB.",
+      'No'
+    ],
+    [
+      'storeRocksdbBloomFilterSize',
+      'integer',
+      '3',
+      "A Bloom filter in RocksDB is used to quickly check whether a key might be in an SST (Sorted String Table) file without actually reading the file, which can significantly improve read performance.",
+      'No'
+    ],
+    [
+      'storeRocksdbSetCacheIndexAndFilterBlocks',
+      'boolean',
+      '3',
+      "If set to true, index and filter blocks will be stored in block cache, together with all other data blocks.",
+      'No'
+    ],
+    [
+      'webBasePath',
+      'string',
+      '',
+      "Base HTTP path for serving web requests.",
+      'No'
+    ],
+    [
+      'webPort',
+      'integer',
+      '6065',
+      "Port number between 1024 and 65535 to use for the web server.",
+      'No'
+    ]
   ]}
 />
 
@@ -44,48 +203,56 @@ Specification of the desired settings of the application.
     [
       'version',
       'string',
+      '',
       'The kaspr version. Defaults to the latest.',
       'No'
     ],
     [
       'replicas',
       'integer',
-      'The number of desired instances. Defaults to 1.',
+      '1',
+      'The number of desired instances.',
       'No'
     ],
     [
       'image',
       'string',
+      '',
       'The container image to use. Defaults to the corresponding image of the version configuration.',
       'No'
     ],  
     [
       'bootstrapServers',
       'string',
+      '',
       'Bootstrap server names to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.',
       'Yes'
     ],
     [
       'tls',
       {'href': '#tls', label: 'TLS'},
+      '',
       'TLS configuration. Provide an empty entry `{}` to enable TLS or exclude the field to disable TLS.',
       'No'
     ],  
     [
       'authentication',
       {'href': '#kafkaauthentication', label: 'KafkaAuthentication'},
+      '',
       'Authentication configuration for Kafka.',
       'No'
     ], 
     [
       'resources',
       {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core', label: 'ResourceRequirements'},
+      '',
       'Compute Resources required by each instance on the application.',
       'No'
     ], 
     [
       'storage',
       {'href': '#storagerequirements', label: 'StorageRequirements'},
+      '',
       'Disk storage required by each instance of the application.',
       'Yes'
     ],                               
@@ -101,18 +268,21 @@ Kafka authentication configuration.
     [
       'type',
       'string',
+      '',
       'The type of authentication to use. Must be one of `scram-sha-256`, `scram-sha-512`, or `plain`',
       'No'
     ],    
     [
       'username',
       'string',
+      '',
       'Username used for authentication.',
       'No'
     ],
     [
       'passwordSecret',
       {'href': '#passwordsecret', label: 'PasswordSecret'},
+      '',
       'Details of the kubernetes secret where the authentication password is stored.',
       'No'
     ]
@@ -128,12 +298,14 @@ Kubernetes secret.
     [
       'secretName',
       'string',
+      '',
       'The name of the Kubernetes secret resource containting the password.',
       'Yes'
     ],    
     [
       'passwordKey',
       'string',
+      '',
       'The name of the key in the Secret under which the password is stored.',
       'Yes'
     ]
@@ -149,18 +321,21 @@ Disk storage configuration (disk).
     [
       'type',
       'string',
+      '',
       'Storage type, must be `ephemeral` or `persistent-claim`',
       'Yes'
     ],    
     [
       'class',
       'string',
+      '',
       'The storage class to use for dynamic volume allocation.',
       'Yes'
     ],
     [
       'deleteClaim',
       'boolean',
+      'false',
       'Specifies if the persistent volume claim has to be deleted when the app is undeployed.',
       'No'
     ]    
