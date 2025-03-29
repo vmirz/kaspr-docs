@@ -1,0 +1,122 @@
+# Kaspr Scheduler
+
+This document provides a detailed explanation of the Kaspr scheduler feature for developers. The scheduler is a core component of the Kaspr stream processing framework and is designed to enable scheduling the delivery of events to Kafka topics at specified times.
+
+Below is an in-depth guide to understanding, configuring, and operating the scheduler.
+
+## Overview
+
+A scheduler is built into the KasprApp when the scheduler feature is enabled. It enables clients to schedule messages for future delivery by sending them to an internal Kafka topic. Once enabled, the scheduler sets up required internal topics and components for managing scheduled messages. Its distributed architecture allows horizontal scaling and high-throughput message dispatching.
+
+## Architecture and Components
+
+The scheduler is composed of four main components that work together to reliably store, evaluate, and dispatch messages:
+
+### Timetable
+* **Function:** 
+Acts as a durable, distributed state store (backed by a Kafka topic) where scheduled messages are stored and organized in chronological order.
+* **Key Points:**
+* * Stores messages in a durable manner.
+* * Evaluates which messages are due for delivery.
+* * The timetable is partitioned across KasprApp instances to allow parallel processing.
+
+### Dispatcher
+* **Function:**
+Responsible for evaluating the timetable every second and dispatching messages that are due for delivery to their target Kafka topics.
+* **Key Points:**
+* * Processes messages chronologically.
+* * Works in a distributed environment, leveraging multiple instances for high throughput.
+* * Guarantees at-least-once delivery.
+
+### Checkpoint Component
+* **Function:**
+eeps track of the dispatcher's progress in processing the timetable. This ensures that after an application restart or failure, the dispatcher resumes from the correct position.
+* **Key Points:**
+* * Provides fault tolerance.
+* * Ensures consistent progress and message delivery.
+
+### Janitor
+* **Function:**
+Prunes historical data from the timetable, removing messages that have already been delivered and are no longer needed.
+* **Key Points:**
+* * Prevents the buildup of outdated messages.
+* * Helps maintain scheduler performance by reducing state size.
+
+## Configuration
+### Enabling the Scheduler
+The scheduler is enabled via the `schedulerEnabled` configuration on the [KasprApp](/api-reference/v1alpha1#kasprapp) custom resource. When enabled, the following actions occur:
+* The KasprApp deploys an internal scheduler.
+* Internal Kafka topics are created:
+* * `schedule-requests` for scheduling requests.
+* * `schedule-rejections` for handling improperly formatted requests.
+
+### Topic Configurations
+The scheduler relies on the following topics:
+* `schedule-requests`:
+Clients send messages here to request future delivery. The message must include:
+* **Key and Value:** The content of the message to be scheduled.
+* **Headers:**
+* * `x-scheduler-deliver-to`: The destination topic for the scheduled message.
+* * `x-scheduler-deliver-at`: An ISO format UTC timestamp specifying when the message should be delivered.
+* `schedule-rejections`:
+If a message is missing the required headers or has a malformed timestamp, it is forwarded here with details about the error.
+
+### Performance Tuning
+The scheduler is designed to handle both low and high volumes of scheduled messages:
+* **Horizontal Scaling:**
+Increase the number of KasprApp replicas to distribute the timetable and parallelize dispatching.
+* **Partitioning:**
+Adjust the number of partitions for the scheduler topics using the schedulerTopicPartitions configuration. More partitions allow for higher throughput by enabling parallel processing. Increase the number of KasprApp replicas to leverage additional partitions.
+
+## Message Scheduling Workflow
+### Scheduling Requests
+1. **Sending a Request:**
+* Clients publish a message to the `schedule-requests` Kafka topic.
+* The message includes:
+* * The desired key and value.
+* * Two critical headers:
+* * * `x-scheduler-deliver-to`: Specifies the destination topic.
+* * * `x-scheduler-deliver-at`: Specifies the delivery time in ISO UTC format.
+2. **Processing the Request:**
+* The scheduler stores the message in the timetable.
+* When the scheduled timestamp is reached, the dispatcher evaluates the timetable and dispatches the message to the target Kafka topic.
+
+### Handling Invalid Requests
+* **Invalid or Malformed Messages:**
+* * If the required headers are missing or the timestamp is malformed, the scheduler forwards the message to the `schedule-rejections topic`.
+* * The rejection includes details on why the scheduling request failed, enabling clients to debug or correct the issue.
+
+### Immediate Dispatch for Past Timestamps
+* **Delivery of Past-Dated Messages:**
+* * If a message is sent with a delivery timestamp in the past, it is delivered immediately.
+* * There is a configurable threshold (`schedulerDiscardOldMessageThresholdSeconds`) that determines if a message is too old. Messages older than this threshold are not dispatched.
+
+## Performance Considerations
+* **Throughput vs. Instantaneous Delivery:**
+* * The scheduler can handle dispatching millions of messages at any given time.
+* * The dispatch process ensures that all messages for a specific timestamp are processed before moving on to the next.
+* * For extremely high message volumes, running multiple instances of [KasprApp](/api-reference/v1alpha1#kasprapp) is recommended to distribute the load across the distributed timetable.
+* **Scaling Strategy:**
+* * Tune the number of replicas and scheduler topic partitions to match the expected throughput.
+* * Monitor performance metrics to ensure that the scheduler keeps up with the message volume.
+
+## Limits and Caveats
+* **Order Guarantee:**
+* * The scheduler does not guarantee the order of messages delivered for a given timestamp. It only guarantees that messages are dispatched in accordance with their scheduled delivery time.
+* **No Message Unscheduling:**
+* * Once a message is scheduled, there is no facility to unschedule (delete) it.
+* **Destination Topic Existence:**
+* * The scheduler assumes that the destination topic (as specified in `x-scheduler-deliver-to`) exists. If it does not, the scheduler will stall dispatching messages until the topic is created.
+
+## Best Practices
+* **Dedicated Scheduler Instances:**
+* * For production or high-throughput use cases, consider deploying dedicated [KasprApp](/api-reference/v1alpha1#kasprapp) for scheduling. This ensures that the scheduler is not burdened by additional processing logic from KasprAgents.
+* **Pre- and Post-Processing:**
+* * Deploy separate KasprApps if there is a need to pre-process messages before scheduling or to post-process messages after they have been dispatched.
+* **Monitoring:**
+* * Regularly monitor scheduler metrics to detect performance bottlenecks or errors.
+
+## Monitoring and Metrics
+The scheduler exposes operational metrics that help track its performance and health:
+* **Grafana Dashboard:**
+* * A pre-configured Grafana dashboard is available for visualizing scheduler metrics.
