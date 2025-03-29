@@ -2,5 +2,6 @@ export default {
   concepts: 'Concepts',
   //processors: 'Processors',
   "kafka-basics": "Kafka - Basics you need to know",
-  agents: "Agents - Distributed stream processors"
+  agents: "Agents - Distributed stream processors",
+  scheduler: "Scheduler - Time-Controlled Event Handling"
 }
