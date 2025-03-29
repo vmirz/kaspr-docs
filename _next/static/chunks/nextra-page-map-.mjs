@@ -94,6 +94,12 @@ export const pageMap = [{
       frontMatter: {
         "sidebarTitle": "Kafka Basics"
       }
+    }, {
+      name: "scheduler",
+      route: "/docs/user-guide/scheduler",
+      frontMatter: {
+        "sidebarTitle": "Scheduler"
+      }
     }]
   }]
 }, {
