@@ -587,6 +587,29 @@ A transform or action to take on input events.
   ]}
 />
 
+## KasprAgentProcessorOperationTable
+
+Reference to a `KasprTable` and how it is made available to an operation's function.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'The name of the `KasprTable` resource.',
+      'Yes'
+    ],
+    [
+      'paramName',
+      'string',
+      '',
+      "The name of the parameter in which the table is made available in the operation's function.",
+      'Yes'
+    ]
+  ]}
+/>
+
 ## KafkaAuthentication
 
 Kafka authentication configuration.
