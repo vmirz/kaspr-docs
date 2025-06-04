@@ -7,6 +7,7 @@ import { OptionTable } from 'components/table'
 - [KasprApp](#KasprApp)
 - [KasprAgent](#KasprAgent)
 - [KasprTask](#KasprTask)
+- [KasprWebView](#KasprWebView)
 
 ## KasprApp
 
@@ -528,7 +529,7 @@ Chain of processors that modify input values.
   options={[
     [
       'pipeline',
-      'array',
+      'list',
       '[]',
       'Sequence of operations to run.',
       'Yes'
@@ -542,7 +543,7 @@ Chain of processors that modify input values.
     ],
     [
       'operations',
-      'array',
+      'list',
       '[]',
       'Chain of operations to run on input events.',
       'Yes'
@@ -565,21 +566,21 @@ A transform or action to take on input events.
     ],
     [
       'tables',
-      'list',
-      '[]',
-      "Tables which are made available for reads and writes in the operation's function.",
+      {'href': '#KasprAgentProcessorOperationTable', label: 'KasprAgentProcessorOperationTable[]'},
+      '',
+      "List of tables which are made available in the operation's function.",
       'No'
     ],
     [
       'map',
-      {'href': '#code', label: 'Code'},,
+      {'href': '#code', label: 'Code'},
       '',
       "Takes an input value and returns an output value which is passed down to the next operation or the agent's output .",
       'No'
     ],
     [
       'filter',
-      {'href': '#code', label: 'Code'},,
+      {'href': '#code', label: 'Code'},
       '',
       "Takes an input value and determines if the event is eligible to be passed down to the next operation or the agent's output. If the filter function returns `true`, the event is passed down, otherwise it is discarded.",
       'No'
@@ -606,6 +607,148 @@ Reference to a `KasprTable` and how it is made available to an operation's funct
       '',
       "The name of the parameter in which the table is made available in the operation's function.",
       'Yes'
+    ]
+  ]}
+/>
+
+## KasprWebView
+
+A web view provides an HTTP endpoint to a `KasprApp`, enabling remote access to the application.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Name of the web view interface',
+      'Yes'
+    ],
+    [
+      'description',
+      'string',
+      '',
+      "A short description of the web view for documentation purpose.",
+      'No'
+    ],
+    [
+      'request',
+      {'href': '#KasprWebViewRequest', label: 'KasprWebViewRequest'},
+      '',
+      "Describes the request endpoint listener.",
+      'Yes'
+    ],  
+    [
+      'response',
+      {'href': '#KasprWebViewResponse', label: 'KasprWebViewResponse'},
+      '',
+      "Describes the web view's response output.",
+      'No'
+    ],      
+
+  ]}
+/>
+
+## KasprWebViewRequest
+
+Specification for the web view request endpoint.
+
+<OptionTable
+  options={[
+    [
+      'method',
+      'string',
+      '',
+      'HTTP method to use for the request. Must be one of `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`',
+      'Yes'
+    ],
+    [
+      'path',
+      'string',
+      '',
+      "Web path to listen on.",
+      'Yes'
+    ],
+    [
+      'request',
+      {'href': '#KasprWebViewRequest', label: 'KasprWebViewRequest'},
+      '',
+      "Describes the request endpoint listener.",
+      'No'
+    ],    
+  ]}
+/>
+
+## KasprWebViewResponse
+
+Specification for the web view's response output.
+
+<OptionTable
+  options={[
+    [
+      'contentType',
+      'string',
+      '',
+      'Response content type. Must be one of `text/html`, `application/json`, `text/plain`, `application/octet-stream`',
+      'No'
+    ],
+    [
+      'statusCode',
+      'integer',
+      '',
+      "HTTP status code to return on success.",
+      'No'
+    ],
+    [
+      'headers',
+      'object',
+      '',
+      "Headers as key and value pairs to return in the response",
+      'No'
+    ],
+    [
+      'bodySelector',
+      {'href': '#KasprWebViewResultHandler', label: 'KasprWebViewResultHandler'},
+      '',
+      "Custom function to transform the response body on success or error.",
+      'No'
+    ],
+    [
+      'statusCodeSelector',
+      {'href': '#KasprWebViewResultHandler', label: 'KasprWebViewResultHandler'},
+      '',
+      "Custom function to determine the status code that is returned in response.",
+      'No'
+    ],
+    [
+      'headersSelector',
+      {'href': '#KasprWebViewResultHandler', label: 'KasprWebViewResultHandler'},
+      '',
+      "Custom function to determine the headers returned in response.",
+      'No'
+    ],        
+  ]}
+/>
+
+## KasprWebViewResultHandler
+
+Function handlers for success or error.
+
+<OptionTable
+  options={[
+    [
+      'onSuccess',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Function to transform response on success.',
+      'No'
+    ],
+    [
+      'onError',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Function to transform response on error.',
+      'No'
     ]
   ]}
 />
