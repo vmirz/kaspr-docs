@@ -7,6 +7,7 @@ import { OptionTable } from 'components/table'
 - [KasprApp](#KasprApp)
 - [KasprAgent](#KasprAgent)
 - [KasprTask](#KasprTask)
+- [KasprWebView](#KasprWebView)
 
 ## KasprApp
 
@@ -35,6 +36,71 @@ A program that runs components of a distributed stream processing application.
       'Metadata that all persisted resources must have.',
       'Yes'
     ]                             
+  ]}
+/>
+
+## KasprAppSpec
+
+Specification of the desired settings of the application.
+
+<OptionTable
+  options={[
+    [
+      'version',
+      'string',
+      '',
+      'The kaspr version. Defaults to the latest.',
+      'No'
+    ],
+    [
+      'replicas',
+      'integer',
+      '1',
+      'The number of desired instances.',
+      'No'
+    ],
+    [
+      'image',
+      'string',
+      '',
+      'The container image to use. Defaults to the corresponding image of the version configuration.',
+      'No'
+    ],  
+    [
+      'bootstrapServers',
+      'string',
+      '',
+      'Bootstrap server names to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.',
+      'Yes'
+    ],
+    [
+      'tls',
+      {'href': '#tls', label: 'TLS'},
+      '',
+      'TLS configuration. Provide an empty entry `{}` to enable TLS or exclude the field to disable TLS.',
+      'No'
+    ],  
+    [
+      'authentication',
+      {'href': '#kafkaauthentication', label: 'KafkaAuthentication'},
+      '',
+      'Authentication configuration for Kafka.',
+      'No'
+    ], 
+    [
+      'resources',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core', label: 'ResourceRequirements'},
+      '',
+      'Compute Resources required by each instance on the application.',
+      'No'
+    ], 
+    [
+      'storage',
+      {'href': '#storagerequirements', label: 'StorageRequirements'},
+      '',
+      'Disk storage required by each instance of the application.',
+      'Yes'
+    ],                               
   ]}
 />
 
@@ -194,68 +260,496 @@ A program that runs components of a distributed stream processing application.
   ]}
 />
 
-## KasprAppSpec
+## KasprAgent
 
-Specification of the desired settings of the application.
+A distributed system processing events in a stream.
 
 <OptionTable
   options={[
     [
-      'version',
+      'apiVersion',
+      'string',
+      'kaspr.io/v1alpha1',
+      '',
+      'Yes'
+    ],
+    [
+      'kind',
+      'string',
+      'KasprAgent',
+      '',
+      'Yes'
+    ],
+    [
+      'metadata',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta', label: 'ObjectMeta'},
+      '{}',
+      'Metadata that all persisted resources must have. An agent must declare a label `kaspr.io/app` with the value of the app name it will be run on.',
+      'Yes'
+    ],
+    [
+      'spec',
+      {'href': '#kaspragentspec', label: 'KasprAgentSpec'},
+      '{}',
+      'Specification of the desired behavior of the KasprAgent.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprAgentSpec
+
+Specification of the desired behavior of the KasprAgent.
+
+<OptionTable
+  options={[
+    [
+      'description',
       'string',
       '',
-      'The kaspr version. Defaults to the latest.',
+      'A short description of the agent for documentation purpose.',
       'No'
     ],
     [
-      'replicas',
+      'input',
+      {'href': '#kaspragentinput', label: 'KasprAgentInput'},
+      '{}',
+      'Input configuration for the agent.',
+      'Yes'
+    ],
+    [
+      'output',
+      {'href': '#kaspragentoutput', label: 'KasprAgentOutput'},
+      '{}',
+      'Output configuration for the agent. Processed events are sent out to the optional output.',
+      'No'
+    ],
+    [
+      'processors',
+      {'href': '#kaspragentprocessors', label: 'KasprAgentProcessors'},
+      '{}',
+      'Sequence of operations that handle input events. Processors are optional and can be used to modify or act on the input events before they are sent to the output.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAgentInput
+
+Input configuration for the KasprAgent.
+
+<OptionTable
+  options={[
+    [
+      'topic',
+      {'href': '#kaspragentinputtopic', label: 'KasprAgentInputTopic'},
+      '{}',
+      'Input topic configuration; mutually exclusive with `channel`.',
+      'No'
+    ],
+    [
+      'channel',
+      {'href': '#kaspragentinputchannel', label: 'KasprAgentInputChannel'},
+      '{}',
+      'Input channel configuration; mutually exclusive with `topic`.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAgentInputTopic
+
+Input topic configuration for the KasprAgent.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Topic names to subscribe to. This can be a single topic or a comma-separated list of topics. Required, but mutually exclusive with `pattern`.',
+      'No'
+    ],
+    [
+      'pattern',
+      'string',
+      '',
+      'Regex pattern of topic names to subscribe to. Required, but mutually exclusive with `name`.',
+      'No'
+    ],
+    [
+      'keySerializer',
+      'string',
+      'json',
+      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Serializer for the value portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAgentInputChannel
+
+Input channel configuration for the KasprAgent.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Name of the channel to subscribe to',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprAgentOutput
+
+Output configuration for the KasprAgent.
+
+<OptionTable
+  options={[
+    [
+      'topics',
+      {'href': '#kaspragentoutputtopic', label: 'KasprAgentOutputTopic[]'},
+      '[]',
+      'List of topics to publish to.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAgentOutputTopic
+
+Output topic configuration for the KasprAgent.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Topic name',
+      'Yes'
+    ],
+    [
+      'ack',
+      'boolean',
+      'false',
+      'Wait for broker acknoledgement before considering the message sent.',
+      'No'
+    ],
+    [
+      'keySerializer',
+      'string',
+      'json',
+      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Serializer for the value portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'keySelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the key of the message. The code must define a function that takes a single argument and returns a value.',
+      'No'
+    ],
+    [
+      'valueSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the value of the message. The code must define a function that takes a single argument and returns a value.',
+      'No'
+    ],
+    [
+      'partitionerSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the partition number of the message. The code must define a function that takes a single argument and returns an integer.',
+      'No'
+    ],
+    [
+      'headerSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the headers of the message. The code must define a function that takes a single argument and returns a key and value map.',
+      'No'
+    ],
+    [
+      'predicate',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the messages to be sent. The code must define a function that takes a single argument and returns a boolean value. Predicates that return `true` will be sent to the output topic, while those that return `false` will be discarded.',
+      'No'
+    ],    
+  ]}
+/>
+
+## Code
+
+Injectable custom code that is used achieve a desired outcome in a specific context.
+
+<OptionTable
+  options={[
+    [
+      'entrypoint',
+      'string',
+      '',
+      'Name of the function that is invoked. If code defines multiple functions, the first function is used as the entrypoint. To avoid ambiguity, it is recommended to explicilty specify the entrypoint.',
+      'No'
+    ],
+    [
+      'python',
+      'string',
+      '',
+      'Python code to be executed. The code must define a valid Python function to use as an entrypoint.',
+      'Yes'
+    ],   
+  ]}
+/>
+
+## KasprAgentProcessors
+
+Chain of processors that modify input values.
+
+<OptionTable
+  options={[
+    [
+      'pipeline',
+      'list',
+      '[]',
+      'Sequence of operations to run.',
+      'Yes'
+    ],
+    [
+      'init',
+      'object',
+      '{}',
+      'Initialization code to run.',
+      'No'
+    ],
+    [
+      'operations',
+      'list',
+      '[]',
+      'Chain of operations to run on input events.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprAgentProcessorOperation
+
+A transform or action to take on input events.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'A unique name for the operation. This is used to identify the operation in the pipeline.',
+      'Yes'
+    ],
+    [
+      'tables',
+      {'href': '#KasprAgentProcessorOperationTable', label: 'KasprAgentProcessorOperationTable[]'},
+      '',
+      "List of tables which are made available in the operation's function.",
+      'No'
+    ],
+    [
+      'map',
+      {'href': '#code', label: 'Code'},
+      '',
+      "Takes an input value and returns an output value which is passed down to the next operation or the agent's output .",
+      'No'
+    ],
+    [
+      'filter',
+      {'href': '#code', label: 'Code'},
+      '',
+      "Takes an input value and determines if the event is eligible to be passed down to the next operation or the agent's output. If the filter function returns `true`, the event is passed down, otherwise it is discarded.",
+      'No'
+    ]    
+  ]}
+/>
+
+## KasprAgentProcessorOperationTable
+
+Reference to a `KasprTable` and how it is made available to an operation's function.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'The name of the `KasprTable` resource.',
+      'Yes'
+    ],
+    [
+      'paramName',
+      'string',
+      '',
+      "The name of the parameter in which the table is made available in the operation's function.",
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprWebView
+
+A web view provides an HTTP endpoint to a `KasprApp`, enabling remote access to the application.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Name of the web view interface',
+      'Yes'
+    ],
+    [
+      'description',
+      'string',
+      '',
+      "A short description of the web view for documentation purpose.",
+      'No'
+    ],
+    [
+      'request',
+      {'href': '#KasprWebViewRequest', label: 'KasprWebViewRequest'},
+      '',
+      "Describes the request endpoint listener.",
+      'Yes'
+    ],  
+    [
+      'response',
+      {'href': '#KasprWebViewResponse', label: 'KasprWebViewResponse'},
+      '',
+      "Describes the web view's response output.",
+      'No'
+    ],      
+
+  ]}
+/>
+
+## KasprWebViewRequest
+
+Specification for the web view request endpoint.
+
+<OptionTable
+  options={[
+    [
+      'method',
+      'string',
+      '',
+      'HTTP method to use for the request. Must be one of `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`',
+      'Yes'
+    ],
+    [
+      'path',
+      'string',
+      '',
+      "Web path to listen on.",
+      'Yes'
+    ],
+    [
+      'request',
+      {'href': '#KasprWebViewRequest', label: 'KasprWebViewRequest'},
+      '',
+      "Describes the request endpoint listener.",
+      'No'
+    ],    
+  ]}
+/>
+
+## KasprWebViewResponse
+
+Specification for the web view's response output.
+
+<OptionTable
+  options={[
+    [
+      'contentType',
+      'string',
+      '',
+      'Response content type. Must be one of `text/html`, `application/json`, `text/plain`, `application/octet-stream`',
+      'No'
+    ],
+    [
+      'statusCode',
       'integer',
-      '1',
-      'The number of desired instances.',
+      '',
+      "HTTP status code to return on success.",
       'No'
     ],
     [
-      'image',
-      'string',
+      'headers',
+      'object',
       '',
-      'The container image to use. Defaults to the corresponding image of the version configuration.',
+      "Headers as key and value pairs to return in the response",
       'No'
-    ],  
-    [
-      'bootstrapServers',
-      'string',
-      '',
-      'Bootstrap server names to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.',
-      'Yes'
     ],
     [
-      'tls',
-      {'href': '#tls', label: 'TLS'},
+      'bodySelector',
+      {'href': '#KasprWebViewResultHandler', label: 'KasprWebViewResultHandler'},
       '',
-      'TLS configuration. Provide an empty entry `{}` to enable TLS or exclude the field to disable TLS.',
+      "Custom function to transform the response body on success or error.",
       'No'
-    ],  
+    ],
     [
-      'authentication',
-      {'href': '#kafkaauthentication', label: 'KafkaAuthentication'},
+      'statusCodeSelector',
+      {'href': '#KasprWebViewResultHandler', label: 'KasprWebViewResultHandler'},
       '',
-      'Authentication configuration for Kafka.',
+      "Custom function to determine the status code that is returned in response.",
       'No'
-    ], 
+    ],
     [
-      'resources',
-      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core', label: 'ResourceRequirements'},
+      'headersSelector',
+      {'href': '#KasprWebViewResultHandler', label: 'KasprWebViewResultHandler'},
       '',
-      'Compute Resources required by each instance on the application.',
+      "Custom function to determine the headers returned in response.",
       'No'
-    ], 
+    ],        
+  ]}
+/>
+
+## KasprWebViewResultHandler
+
+Function handlers for success or error.
+
+<OptionTable
+  options={[
     [
-      'storage',
-      {'href': '#storagerequirements', label: 'StorageRequirements'},
+      'onSuccess',
+      {'href': '#code', label: 'Code'},
       '',
-      'Disk storage required by each instance of the application.',
-      'Yes'
-    ],                               
+      'Function to transform response on success.',
+      'No'
+    ],
+    [
+      'onError',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Function to transform response on error.',
+      'No'
+    ]
   ]}
 />
 
@@ -341,3 +835,5 @@ Disk storage configuration (disk).
     ]    
   ]}
 />
+
+
