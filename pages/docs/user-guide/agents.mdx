@@ -2,59 +2,213 @@ import { Callout } from 'nextra/components'
 
 # Agents - Distributed Stream Processors
 
-An agent is a distributed system processing the events in a stream. 
+## What Is a KasprAgent?
 
-## Define Agents
+A `KasprAgent` is a stream processor defined as a Kubernetes custom resource. It listens to incoming event streams from Kafka topics or in-memory channels, applies custom logic using a programmable pipeline of operations, and optionally produces results to output topics, channels, or sinks.
 
-### Inputs
-A KasprAgent resource takes an input topic or channel that defines the source of events for the agent's stream.
+KasprAgents provide a fully declarative, Kubernetes-native way to express stream processing applications, making them easy to version, manage, and deploy like any other resource in your cluster.
 
-<Callout type="info">
-**Multiple topics**
+## Quickstart
 
-You can consume from multiple topics simultaniously by providing multiple topic names or a regex pattern. This is mostly useful when all inputs share the same data schema but can also be used in general.
-</Callout>
+### Create a KasprAgent
 
-```yaml copy
+A minimal agent can be created by specifying an input topic and a simple mapping processor:
+
+```yaml
 apiVersion: kaspr.io/v1alpha1
 kind: KasprAgent
 metadata:
-  name: welcome-email-sender
+  name: echo-agent
 spec:
-  inputs:
+  input:
     topic:
-      names:
-        - new-customers
+      name: demo-input
+  output:
+    topics:
+      - name: demo-output
+  processors:
+    pipeline:
+      - echo
+    operations:
+      - name: echo
+        map:
+          python: |
+            def echo(value):
+                return value
+```
+Apply it using:
+
+```bash
+kubectl apply -f echo-agent.yaml
 ```
 
-<Callout type="info">
-**Partitioning**
+### Components of a KasprAgent
 
-When an agent reads from a topic, the stream is partitioned based on the key of the message. For example, the stream could have keys that are customer ids, and values that are purchases, then partitioning will decide that any message with the same customer id as key, is always delivered to the same agent instance.
-Sometimes you’ll have to repartition the stream, to ensure a portion of the data is consistently delievered to the same agent instance on a particu. See [Stream Processors](#stream-processors) for more information on the `group_by` operator.
-</Callout>
+#### Input
 
-### App Assignment
-Agents must be assigned to a KasprApp. The assigned app is the designated worker that will host and run the agent stream processor.
+Agents must define their input source. This is either:
 
-```yaml {5} copy
-apiVersion: kaspr.io/v1alpha1
-kind: KasprAgent
-metadata:
-  name: offer-generator
-  kaspr.io/app: loyalty-app
-spec:
-  inputs:
-    topic:
-      names:
-        - customers
+* A Kafka topic, defined with name or pattern, and serialization settings.
+* An in-memory channel, useful for internal communication or testing.
+
+You can also set `declare: true` to have the agent auto-create the topic if missing.
+
+```yaml
+input:
+  topic:
+    name: my-topic
+    declare: true
+    keySerializer: json
+    valueSerializer: json
 ```
 
-### Processors
+#### Output
 
-Processors take actions on events in a stream, processing one event at a time. Operations like `filter`, `map`, and `groupBy` are built-in processor action that transform the stream. You can also create custom operations using Python. An agent processor chains multiple operations together into a pipeline, with each input event flowing through the operations sequentially.
+KasprAgents can emit output to:
 
-There are two types of processor operations:
+* Kafka topics, defined with static names or dynamic functions.
+* In-memory channels for internal use.
+* Custom sinks defined by Python code
 
-- **Terminal**: A terminal operator concludes the stream processing and represents the final operation in a pipeline.
-- **Non-terminal**: A non-terminal operator transforms the stream and passes it along, enabling subsequent operators in the chain to process the data further.
+Each output target can define:
+
+* `keySelector`, `valueSelector`, and optional `headersSelector`
+* `predicate` for filtering what values to allow to pass through
+* `partitionSelector` for custom partitioning
+* `ack: true` for delivery guarantees
+
+Example:
+
+```yaml
+output:
+  topics:
+    - name: my-output-topic
+      keySelector:
+        python: |
+          def get_key(value):
+              return value["id"]
+      predicate:
+        python: |
+          def should_send(value):
+              return "id" in value
+```
+
+#### Processors
+
+The *heart* of a KasprAgent is its processors section, which defines the transformation pipeline.
+
+A processor pipeline is:
+
+* Declared as a sequence of named operations
+* Backed by user-defined Python `map` and/or `filter` functions
+* Optional `tables` can be attached for stateful logic
+
+Example:
+
+```yaml
+processors:
+  pipeline:
+    - validate
+    - enrich
+  init:
+    python: |
+      def init():
+          print("Initializing agent...")
+  operations:
+    - name: validate
+      filter:
+        python: |
+          def validate(value):
+              return value.get("is_valid", False)
+    - name: enrich
+      map:
+        python: |
+          def enrich(value):
+              value["processed"] = True
+              return value
+```
+
+#### Initialization
+
+The `init` block lets you define startup logic, load configuration, prepare resources, or validate environment variables.
+
+```yaml
+init:
+  python: |
+    import os
+    if "MY_VAR" not in os.environ:
+        raise RuntimeError("Missing MY_VAR")
+```
+
+#### Table Access
+
+Agents can reference state tables and use them as inputs to their operations.
+
+```yaml
+tables:
+  - name: my-table
+    paramName: table
+```
+
+```yaml
+map:
+  python: |
+    def enrich(value, table):
+        value["status"] = table.get(value["id"], "unknown")
+        return value
+```
+---
+
+### Partitioning and Routing
+
+Kafka partitioning is automatically leveraged if your input topics are partitioned. You can control output partitioning via `partitionSelector`.
+
+You may also implement *repartitioning* by emitting records with a newly computed key via `keySelector` and routing to a new topic.
+
+### Processing Failures
+
+When an agent encounters an exception during event processing, the system maintains exactly-once semantics by acknowledging the source message and not reprocessing it. While this prevents duplicate processing, it raises the question of what happens to failed events.
+
+There are several approaches to handling failed events, each with trade-offs:
+
+**Acknowledgment (Current Behavior)**
+- The failed message is acknowledged and marked as complete
+- Ensures exactly-once processing semantics
+- Failed events are not reprocessed automatically
+
+**Retry Strategies**
+- Retrying requires stopping topic processing to maintain message ordering
+- The next offset cannot be processed until the failed event is resolved
+- Moving events to the "back of the queue" breaks topic ordering
+
+**Instance Restart**
+- Crashing the instance forces human intervention
+- Not ideal given the frequency of code errors and unexpected exceptions
+- Better to log errors and notify operations teams for manual replay
+
+#### Explicit Error Handling
+
+Agents may emit to dead-letter queues (DLQs) using conditional logic in predicate or return values that match failure conditions.
+
+```yaml
+output:
+  topics:
+    - name: dead-letter-topic
+      predicate:
+        python: |
+          def should_send(value):
+              return "error" in value
+```
+---
+
+### Concurrency and Scaling
+
+KasprAgents scale by deploying multiple `KasprApp` replicas. Kafka ensures partition-based routing, meaning each message lands on exactly one instance.
+Kafka automatically distributes topic partitions across available agent instances using consumer group rebalancing. When you scale agent replicas:
+
+- **Adding instances**: New agents join the consumer group and Kafka redistributes partitions to balance the load
+- **Removing instances**: Kafka detects unavailable agents and reassigns their partitions to remaining instances
+- **Partition assignment**: Each partition is consumed by exactly one agent instance at a time, ensuring ordered processing
+
+This automatic rebalancing means agents can scale horizontally without manual intervention, with processing automatically redistributed as the cluster size changes.
+
