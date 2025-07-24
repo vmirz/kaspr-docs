@@ -62,6 +62,42 @@ input:
     valueSerializer: json
 ```
 
+#### Input Buffering
+
+Agents can buffer multiple input events before processing them as a batch. This is useful for scenarios where processing efficiency improves with larger batches, such as bulk database operations or machine learning inference.
+
+```yaml
+input:
+  topic:
+    name: sensor-data
+  take:
+    max: 100           # Process up to 100 events at once
+    within: 5s         # Or process after 5 seconds, whichever comes first
+```
+
+When buffering is enabled, your processor functions receive a list of events instead of individual events:
+
+```yaml
+processors:
+  operations:
+    - name: batch-process
+      map:
+        python: |
+          def process_batch(events):
+              # events is now a list of values
+              processed = []
+              for event in events:
+                  event["batch_size"] = len(events)
+                  processed.append(event)
+              return processed
+```
+
+Buffering is particularly beneficial for:
+- **Bulk operations**: Database inserts, API calls with batch endpoints
+- **Statistical analysis**: Computing aggregates over windows of data
+- **ML inference**: Batch prediction for better GPU utilization
+- **I/O optimization**: Reducing network round trips
+
 #### Output
 
 KasprAgents can emit output to:
