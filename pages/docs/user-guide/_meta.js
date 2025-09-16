@@ -4,5 +4,8 @@ export default {
   "kafka-basics": "Kafka - Basics you need to know",
   agents: "Agents - Distributed stream processors",
   patterns: "Agent Patterns - Common Use Cases",
-  scheduler: "Scheduler - Time-Controlled Event Handling"
+  scheduler: {
+    title: "Scheduler - Time-Controlled Event Handling",
+    display: 'hidden'  // This will also hide the page
+  },
 }
