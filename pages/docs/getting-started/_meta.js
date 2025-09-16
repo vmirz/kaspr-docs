@@ -1,5 +1,10 @@
 export default {
   introduction: 'Introduction',
-  installation: "Install Kaspr Operator",
-  architecture: 'Architecture'
+  installation: {
+    title: "Installation",
+  },
+  architecture: {
+    title: 'Architecture',
+    display: 'hidden'  // This will also hide the page
+  }
 }

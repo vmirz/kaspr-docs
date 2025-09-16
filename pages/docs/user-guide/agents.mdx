@@ -1,18 +1,45 @@
+
 import { Callout } from 'nextra/components'
 
-# Agents - Distributed Stream Processors
+# KasprAgents - Distributed Stream Processors
+
 
 ## What Is a KasprAgent?
 
+
 A `KasprAgent` is a stream processor defined as a Kubernetes custom resource. It listens to incoming event streams from Kafka topics or in-memory channels, applies custom logic using a programmable pipeline of operations, and optionally produces results to output topics, channels, or sinks.
 
-KasprAgents provide a fully declarative, Kubernetes-native way to express stream processing applications, making them easy to version, manage, and deploy like any other resource in your cluster.
+**Key Features:**
+- Declarative configuration via Kubernetes CRDs
+- Horizontal scalability and automatic partition rebalancing
+- Flexible input/output (Kafka topics, channels, custom sinks)
+- Programmable transformation pipeline (Python functions)
+- Built-in support for batching, error handling, and stateful processing
+
+**Why use KasprAgents?**
+- Version, manage, and deploy stream processors like any other Kubernetes resource
+- Integrate with existing Kafka infrastructure
+- Simplify complex event-driven workflows
+
+---
+
+
+## Example Use Cases
+
+- **ETL Pipelines:** Transform and enrich data from Kafka topics before loading into databases
+- **Anomaly Detection:** Process sensor streams and emit alerts for outlier events
+- **Event Enrichment:** Join events with reference tables and output enriched results
+
+---
 
 ## Quickstart
 
+
 ### Create a KasprAgent
 
-A minimal agent can be created by specifying an input topic and a simple mapping processor:
+
+A minimal agent can be created by specifying an input topic and a simple mapping processor. This example echoes incoming events to an output topic:
+
 
 ```yaml
 apiVersion: kaspr.io/v1alpha1
@@ -36,20 +63,25 @@ spec:
             def echo(value):
                 return value
 ```
+
 Apply it using:
 
 ```bash
 kubectl apply -f echo-agent.yaml
 ```
 
-### Components of a KasprAgent
+---
 
-#### Input
+
+## Components of a KasprAgent
+
+
+### Input
 
 Agents must define their input source. This is either:
 
-* A Kafka topic, defined with name or pattern, and serialization settings.
-* An in-memory channel, useful for internal communication or testing.
+- A Kafka topic, defined with name or pattern, and serialization settings.
+- An in-memory channel, useful for internal communication or testing.
 
 You can also set `declare: true` to have the agent auto-create the topic if missing.
 
@@ -62,9 +94,12 @@ input:
     valueSerializer: json
 ```
 
+<Callout type="tip">Use `declare: true` to automatically create missing topics or channels.</Callout>
+
+
 #### Input Buffering
 
-Agents can buffer multiple input events before processing them as a batch. This is useful for scenarios where processing efficiency improves with larger batches, such as bulk database operations or machine learning inference.
+KasprAgents can buffer multiple input events before processing them as a batch. This is useful for scenarios where processing efficiency improves with larger batches, such as bulk database operations or machine learning inference.
 
 ```yaml
 input:
@@ -92,26 +127,29 @@ processors:
               return processed
 ```
 
+<Callout type="tip">Batching is ideal for bulk database writes, ML inference, and reducing network round trips.</Callout>
+
 Buffering is particularly beneficial for:
 - **Bulk operations**: Database inserts, API calls with batch endpoints
 - **Statistical analysis**: Computing aggregates over windows of data
 - **ML inference**: Batch prediction for better GPU utilization
 - **I/O optimization**: Reducing network round trips
 
-#### Output
+
+### Output
 
 KasprAgents can emit output to:
 
-* Kafka topics, defined with static names or dynamic functions.
-* In-memory channels for internal use.
-* Custom sinks defined by Python code
+- Kafka topics, defined with static names or dynamic functions.
+- In-memory channels for internal use.
+- Custom sinks defined by Python code
 
 Each output target can define:
 
-* `keySelector`, `valueSelector`, and optional `headersSelector`
-* `predicate` for filtering what values to allow to pass through
-* `partitionSelector` for custom partitioning
-* `ack: true` for delivery guarantees
+- `keySelector`, `valueSelector`, and optional `headersSelector`
+- `predicate` for filtering what values to allow to pass through
+- `partitionSelector` for custom partitioning
+- `ack: true` for delivery guarantees
 
 Example:
 
@@ -129,15 +167,18 @@ output:
               return "id" in value
 ```
 
-#### Processors
+<Callout type="tip">Use predicates to filter which events are sent to output topics.</Callout>
+
+
+### Processors
 
 The *heart* of a KasprAgent is its processors section, which defines the transformation pipeline.
 
 A processor pipeline is:
 
-* Declared as a sequence of named operations
-* Backed by user-defined Python `map` and/or `filter` functions
-* Optional `tables` can be attached for stateful logic
+- Declared as a sequence of named operations
+- Backed by user-defined Python `map` and/or `filter` functions
+- Optional `tables` can be attached for stateful logic
 
 Example:
 
@@ -164,6 +205,9 @@ processors:
               return value
 ```
 
+<Callout type="tip">Keep processor functions stateless unless you use tables for stateful logic.</Callout>
+
+
 #### Initialization
 
 The `init` block lets you define startup logic, load configuration, prepare resources, or validate environment variables.
@@ -175,6 +219,9 @@ init:
     if "MY_VAR" not in os.environ:
         raise RuntimeError("Missing MY_VAR")
 ```
+
+<Callout type="info">Use `init` for resource setup, environment validation, or loading configuration.</Callout>
+
 
 #### Table Access
 
@@ -193,7 +240,11 @@ map:
         value["status"] = table.get(value["id"], "unknown")
         return value
 ```
+
+<Callout type="info">Tables provide persistent or shared state for advanced event processing.</Callout>
+
 ---
+
 
 ### Partitioning and Routing
 
@@ -203,7 +254,7 @@ You may also implement *repartitioning* by emitting records with a newly compute
 
 ### Processing Failures
 
-When an agent encounters an exception during event processing, the system maintains exactly-once semantics by acknowledging the source message and not reprocessing it. While this prevents duplicate processing, it raises the question of what happens to failed events.
+When a KasprAgent encounters an exception during event processing, the system maintains exactly-once semantics by acknowledging the source message and not reprocessing it. While this prevents duplicate processing, it raises the question of what happens to failed events.
 
 There are several approaches to handling failed events, each with trade-offs:
 
@@ -222,6 +273,9 @@ There are several approaches to handling failed events, each with trade-offs:
 - Not ideal given the frequency of code errors and unexpected exceptions
 - Better to log errors and notify operations teams for manual replay
 
+<Callout type="warning">Always monitor agent logs for errors and consider using DLQs for failed events.</Callout>
+
+
 #### Explicit Error Handling
 
 Agents may emit to dead-letter queues (DLQs) using conditional logic in predicate or return values that match failure conditions.
@@ -235,7 +289,11 @@ output:
           def should_send(value):
               return "error" in value
 ```
+
+<Callout type="info">DLQs help isolate and analyze failed events for later reprocessing.</Callout>
+
 ---
+
 
 ### Concurrency and Scaling
 
@@ -247,4 +305,23 @@ Kafka automatically distributes topic partitions across available agent instance
 - **Partition assignment**: Each partition is consumed by exactly one agent instance at a time, ensuring ordered processing
 
 This automatic rebalancing means agents can scale horizontally without manual intervention, with processing automatically redistributed as the cluster size changes.
+
+<Callout type="tip">Scale agents up or down to match workload—Kafka handles partition rebalancing automatically.</Callout>
+
+---
+
+## FAQ & Troubleshooting
+
+**Q: Why isn’t my agent processing events?**
+A: Check that your input topic/channel exists and is correctly configured. Use `declare: true` to auto-create topics. Review agent logs for errors.
+
+**Q: How do I debug processor errors?**
+A: Enable detailed logging in your processor functions. Use DLQs to capture failed events for analysis.
+
+**Q: Can I use global state in processor functions?**
+A: Use tables for persistent or shared state.
+
+**Q: How do I handle schema changes in input events?**
+A: Update your processor functions to handle new fields or formats. Consider versioning your agent resources.
+
 
