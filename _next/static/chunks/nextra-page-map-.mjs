@@ -106,6 +106,12 @@ export const pageMap = [{
       frontMatter: {
         "sidebarTitle": "Scheduler"
       }
+    }, {
+      name: "webviews",
+      route: "/docs/user-guide/webviews",
+      frontMatter: {
+        "sidebarTitle": "Webviews"
+      }
     }]
   }]
 }, {
