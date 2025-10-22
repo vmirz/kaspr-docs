@@ -1,31 +1,128 @@
-# Introduction
+# Introduction to Kaspr
 
-## How it works
+Welcome to **Kaspr** – a Kubernetes-native stream processing framework that dramatically simplifies building real-time, event-driven applications on Apache Kafka.
 
-### Agents
+## What is Kaspr?
 
-Process infinite streams in a straightforward manner. The concept of “agents” comes from the actor model, and means the stream processor can execute concurrently on on hundreds of machines at the same time.
+Kaspr is a **declarative stream processing platform** that allows you to build sophisticated data processing pipelines using simple YAML configurations instead of complex stream processing code. Built as Kubernetes Custom Resource Definitions (CRDs), Kaspr provides enterprise-ready features like scaling, authentication, persistent storage, and monitoring out of the box.
 
-Deploy an agent using a Kubernetes resource and assign it to an app. Use regular Python or your favorite python libraries to customize stream processing logic and behavior.
+## Why Choose Kaspr?
 
-TODO: Update this example
+**Declarative & Simple** - Define your entire stream processing application in YAML – no need to write complex Kafka Streams or custom applications from scratch.
+
+**Python-Powered Processing** - Write your business logic in Python using familiar libraries, while Kaspr handles the distributed systems complexity.
+
+**Production-Ready** - Built for Kubernetes with enterprise features: RBAC, resource limits, persistent storage, TLS authentication, and horizontal scaling.
+
+**Stateful Processing** - Maintain tables, perform joins, and handle aggregations across distributed partitions with automatic state management.
+
+## Core Components
+
+Kaspr applications are built using three main resource types:
+
+### KasprApp
+The main application definition that specifies infrastructure requirements, Kafka connection details, and deployment configuration.
+
+```yaml filename="app.yaml"
+apiVersion: kaspr.io/v1alpha1
+kind: KasprApp
+metadata:
+  name: my-stream-processor
+spec:
+  replicas: 3
+  bootstrapServers: kafka-cluster:9092
+  authentication:
+    type: scram-sha-512
+    username: my-user
+  resources:
+    requests:
+      cpu: 0.2
+      memory: 512Mi
+```
+
+### KasprAgent
+The stream processing units that consume from Kafka topics, transform data using Python logic, and produce results.
+
 ```yaml filename="agent.yaml"
 apiVersion: kaspr.io/v1alpha1
 kind: KasprAgent
 metadata:
-  name: my-agent
+  name: price-calculator
   labels:
-    kaspr.io/app: my-app
+    kaspr.io/app: my-stream-processor
 spec:
-    input:
-        topic: my-topic
-    processor:
-        pipeline:
-            - my-processor
-        operations:
-            - name: my-processor
-              map:
-                python: |
-                    def process(event):
-                    return event
+  description: "Calculates median prices from item data"
+  input:
+    topic:
+      name: raw-prices
+  output:
+    topics:
+      - name: calculated-prices
+  processors:
+    pipeline:
+      - calculate-median
+    operations:
+      - name: calculate-median
+        map:
+          entrypoint: calculate_price
+          python: |
+            def calculate_price(value):
+                prices = [item['price'] for item in value['items']]
+                median = sorted(prices)[len(prices)//2]
+                return {
+                    "product_id": value["product_id"],
+                    "median_price": median
+                }
 ```
+
+### KasprTable
+Persistent key-value stores for stateful processing, enabling joins, aggregations, and lookups.
+
+```yaml filename="table.yaml"
+apiVersion: kaspr.io/v1alpha1
+kind: KasprTable
+metadata:
+  name: product-prices
+  labels:
+    kaspr.io/app: my-stream-processor
+spec:
+  keySerializer: json
+  valueSerializer: json
+  partitions: 16
+```
+
+## Common Use Cases
+
+Based on real-world implementations, Kaspr excels at:
+
+- **Real-time Data Joins** - Combine data from multiple Kafka topics based on common keys, like joining product information with pricing data.
+- **Stream Aggregations** - Calculate rolling averages, medians, counts, and other metrics over time windows or event groups.
+- **Business Rules Processing** - Apply complex business logic to streaming data using a rules engine that can be updated dynamically.
+- **Data Filtering & Transformation** - Clean, enrich, and transform streaming data before forwarding to downstream systems.
+- **REST API Integration** - Expose web interfaces for interacting with your stream processing applications using `KasprWebView`.
+
+## Architecture Benefits
+
+- **Event-Driven Microservices** - Build loosely-coupled services that communicate via Kafka events, enabling better scalability and fault tolerance.
+- **Horizontal Scaling** - Kaspr automatically distributes processing across multiple pods and handles partition assignment and rebalancing.
+- **Fault Tolerance** - Built-in error handling, dead letter topics, and automatic recovery ensure your applications stay resilient.
+- **Observability** - Native Kubernetes integration means your stream processors work with existing monitoring, logging, and alerting infrastructure.
+
+## Who Should Use Kaspr?
+
+- **Data Engineers** - Building real-time data pipelines without the overhead of managing complex stream processing frameworks.
+- **Backend Developers** - Creating event-driven microservices that need to process and react to streaming data.
+- **Platform Teams** - Providing a standardized way for teams to build and deploy stream processing applications at scale.
+- **Python Developers** - Leveraging existing Python skills and libraries for stream processing without learning new DSLs.
+
+## What's Next?
+
+Ready to get started? Here's your path forward:
+
+1. **[Install Kaspr](/docs/getting-started/installation)** - Set up the Kaspr operator in your Kubernetes cluster
+3. **[Learn Concepts](/docs/user-guide/concepts)** - Create a simple stream processing application
+4. **[Explore Examples](https://github.com/TotalWineLabs/kaspr-operator/tree/master/examples)** - See real-world use cases and patterns
+
+---
+
+**Ready to simplify your stream processing?** Kaspr transforms complex distributed systems challenges into simple YAML configurations, letting you focus on business logic instead of infrastructure complexity.

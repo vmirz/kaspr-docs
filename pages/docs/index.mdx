@@ -3,31 +3,96 @@ import { basePath } from 'utils/config'
 
 # Kaspr Documentation
  
-Kaspr dramatically simplifies the creation of real-time, event-driven applications and microservices. Built as a set of Kubernetes CRDs (Custom Resource Definitions), it provides a straightforward framework for building scalable streaming and event processing systems.
+**Kaspr** is a Kubernetes-native stream processing framework that dramatically simplifies building real-time, event-driven applications on Apache Kafka. Write your stream processing logic in **Python** using simple **YAML configurations** instead of complex distributed systems code.
 
-Kaspr has a single dependency: Kafka, which serves as the persistence and transport layer for all events processed by the system. While similar to [Kafka Streams](https://kafka.apache.org/39/documentation/streams/), Kaspr offers greater flexibility by not being limited to a domain-specific language (DSL). Kaspr is optimized for Kubernetes, offering both ease of use and scalability.
+Built as Kubernetes Custom Resource Definitions (CRDs), Kaspr provides enterprise-ready features like horizontal scaling, authentication, persistent storage, and monitoring out of the box. With Kafka as its only dependency, Kaspr offers the flexibility of custom stream processing without the complexity of traditional frameworks.
 
-## Use Cases
+## Key Features
 
-- Event driven microservices
-- Real-time data integration
-- Real-time analytics
-- Stateful computations
-- Materialized views/cache
+- **Declarative Configuration** - Define entire applications using YAML, no complex DSL required
+- **Python Processing** - Write business logic in Python with familiar libraries and patterns  
+- **Stateful Operations** - Built-in support for tables, joins, aggregations, and lookups
+- **REST API Integration** - Expose web interfaces with KasprWebView for real-time data access
+- **Production Ready** - Enterprise features including RBAC, resource limits, and fault tolerance
+- **Kubernetes Native** - Seamless integration with existing Kubernetes infrastructure
 
-## Quick Start
+## What You Can Build
+
+- **Real-time Data Pipelines** - Process and transform streaming data with complex business logic
+- **Event-Driven Microservices** - Build loosely-coupled services that react to Kafka events
+- **Stream Analytics** - Calculate real-time metrics, aggregations, and rolling computations
+- **Data Enrichment Services** - Augment events with external API calls and cached lookups
+- **Business Rules Engines** - Apply dynamic rules and routing logic to streaming data
+- **Notification Systems** - Fan-out events to multiple channels with preferences and rate limiting
+
+## Core Resources
+
+Kaspr applications use three main Kubernetes resources:
+
+- **KasprApp** - Defines infrastructure, scaling, and Kafka connectivity
+- **KasprAgent** - Processes streams with Python logic and routing rules  
+- **KasprTable** - Provides persistent key-value storage for stateful operations
+- **KasprWebView** - Exposes Web APIs for real-time data access and interaction
+
+## Quick Start Guide
  
 <Cards>
   <Cards.Card
-    title="Install Kaspr Operator"
-    href={`/docs/getting-started/installation/helm`}
+    title="📚 Introduction"
+    href={`/docs/getting-started/introduction`}
+    description="Learn what Kaspr is and how it works"
   />
   <Cards.Card
-    title="Concepts"
+    title="⚡ Installation"
+    href={`/docs/getting-started/installation`}
+    description="Set up the Kaspr operator in your cluster"
+  />
+  <Cards.Card
+    title="📖 User Guide"
     href={`/docs/user-guide/concepts`}
+    description="Learn concepts and build your first app"
   />
   <Cards.Card
-    title="CRD Reference"
+    title="🔗 API Reference"
     href={`/docs/api-reference/v1alpha1`}
+    description="Complete CRD specification and examples"
+  />
+  <Cards.Card
+    title="💼 Examples"
+    href="https://github.com/TotalWineLabs/kaspr-operator/tree/master/examples"
+    description="Real-world patterns and use cases"
   />
 </Cards>
+
+## Simple Example
+
+Here's a minimal Kaspr application that processes user events:
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: user-event-processor
+spec:
+  input:
+    topic:
+      name: user-events
+  output:
+    topics:
+      - name: processed-events
+  processors:
+    pipeline:
+      - enrich-event
+    operations:
+      - name: enrich-event
+        map:
+          python: |
+            def enrich_event(value):
+                # Add processing timestamp
+                value["processed_at"] = datetime.utcnow().isoformat()
+                # Normalize user ID
+                value["user_id"] = value["user_id"].lower()
+                return value
+```
+
+Ready to build real-time applications with Kaspr? Start with the [Introduction](/docs/getting-started/introduction) to learn the fundamentals.
