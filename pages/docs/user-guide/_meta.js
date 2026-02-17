@@ -4,6 +4,7 @@ export default {
   "kafka-basics": "Kafka - Basics you need to know",
   agents: "Agents - Distributed stream processors",
   webviews: "Webviews - Web interfaces for stream processing",
+  "python-packages": "Python Packages - Dependency Management",
   patterns: "Agent Patterns - Common Use Cases",
   scheduler: {
     title: "Scheduler - Time-Controlled Event Handling",

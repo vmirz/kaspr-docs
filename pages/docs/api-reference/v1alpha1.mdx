@@ -100,6 +100,13 @@ Specification of the desired settings of the application.
       '',
       'Disk storage required by each instance of the application.',
       'Yes'
+    ],
+    [
+      'pythonPackages',
+      {'href': '#pythonpackagesspec', label: 'PythonPackagesSpec'},
+      '',
+      'Python package management configuration for automatic package installation via init containers.',
+      'No'
     ],                               
   ]}
 />
@@ -863,6 +870,265 @@ Disk storage configuration (disk).
       'Specifies if the persistent volume claim has to be deleted when the app is undeployed.',
       'No'
     ]    
+  ]}
+/>
+
+## PythonPackagesSpec
+
+Configuration for automatic Python package installation. Packages are installed by an init container before the main application starts.
+
+<OptionTable
+  options={[
+    [
+      'packages',
+      'string[]',
+      '',
+      'List of Python packages to install (e.g., `["requests", "pandas>=2.0.0"]`).',
+      'Yes'
+    ],
+    [
+      'indexUrl',
+      'string',
+      '',
+      'Base URL of the Python Package Index (e.g., `https://pypi.org/simple`).',
+      'No'
+    ],
+    [
+      'extraIndexUrls',
+      'string[]',
+      '',
+      'Additional package index URLs to search.',
+      'No'
+    ],
+    [
+      'trustedHosts',
+      'string[]',
+      '',
+      'Hosts to trust for SSL verification (skip certificate checks).',
+      'No'
+    ],
+    [
+      'credentials',
+      {'href': '#pythonpackagescredentials', label: 'PythonPackagesCredentials'},
+      '',
+      'Credentials for private PyPI registry authentication.',
+      'No'
+    ],
+    [
+      'cache',
+      {'href': '#pythonpackagescache', label: 'PythonPackagesCache'},
+      '',
+      'Cache configuration for storing installed packages across restarts.',
+      'No'
+    ],
+    [
+      'installPolicy',
+      {'href': '#pythonpackagesinstallpolicy', label: 'PythonPackagesInstallPolicy'},
+      '',
+      'Installation behavior policy (retries, timeout, failure handling).',
+      'No'
+    ],
+    [
+      'resources',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#resourcerequirements-v1-core', label: 'ResourceRequirements'},
+      '',
+      'Resource requirements for the init container that installs packages.',
+      'No'
+    ]
+  ]}
+/>
+
+## PythonPackagesCache
+
+Cache configuration for storing installed packages. Supports PVC-based caching, ephemeral (emptyDir) storage, or Google Cloud Storage (GCS).
+
+<OptionTable
+  options={[
+    [
+      'type',
+      'string',
+      'pvc',
+      'Cache backend type. Must be `pvc` or `gcs`. When set to `pvc`, uses a PersistentVolumeClaim (requires RWX storage class). When set to `gcs`, uses Google Cloud Storage.',
+      'No'
+    ],
+    [
+      'enabled',
+      'boolean',
+      'false',
+      'Enable PVC-based caching. When `false` (default), uses ephemeral emptyDir storage per pod. Only applies when `type` is `pvc`.',
+      'No'
+    ],
+    [
+      'storageClass',
+      'string',
+      '',
+      'The storage class to use for the packages cache PVC.',
+      'No'
+    ],
+    [
+      'size',
+      'string',
+      '',
+      'Size of the packages cache PVC (e.g., `256Mi`, `1Gi`).',
+      'No'
+    ],
+    [
+      'accessMode',
+      'string',
+      'ReadWriteMany',
+      'Access mode for the cache PVC. Only `ReadWriteMany` is currently supported for shared package cache.',
+      'No'
+    ],
+    [
+      'deleteClaim',
+      'boolean',
+      'false',
+      'Whether to delete the PVC when the app is undeployed.',
+      'No'
+    ],
+    [
+      'gcs',
+      {'href': '#gcscacheconfig', label: 'GCSCacheConfig'},
+      '',
+      'GCS cache configuration. Required when `type` is `gcs`.',
+      'No'
+    ]
+  ]}
+/>
+
+## GCSCacheConfig
+
+Google Cloud Storage cache configuration for storing packaged archives remotely.
+
+<OptionTable
+  options={[
+    [
+      'bucket',
+      'string',
+      '',
+      'GCS bucket name for storing cached package archives.',
+      'Yes'
+    ],
+    [
+      'prefix',
+      'string',
+      'kaspr-packages/',
+      'Key prefix for cached archives in the bucket.',
+      'No'
+    ],
+    [
+      'maxArchiveSize',
+      'string',
+      '1Gi',
+      'Maximum archive size to upload to GCS. Archives exceeding this size are skipped.',
+      'No'
+    ],
+    [
+      'secretRef',
+      {'href': '#gcssecretreference', label: 'GCSSecretReference'},
+      '',
+      'Reference to a Secret containing a GCS service account key JSON file.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## GCSSecretReference
+
+Reference to a Kubernetes Secret containing a Google Cloud service account key JSON file for GCS authentication.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Name of the Secret containing the service account key.',
+      'Yes'
+    ],
+    [
+      'key',
+      'string',
+      'sa.json',
+      'Key within the Secret containing the JSON file.',
+      'No'
+    ]
+  ]}
+/>
+
+## PythonPackagesInstallPolicy
+
+Installation behavior policy for Python package installation.
+
+<OptionTable
+  options={[
+    [
+      'retries',
+      'integer',
+      '3',
+      'Number of retry attempts for package installation.',
+      'No'
+    ],
+    [
+      'timeout',
+      'integer',
+      '600',
+      'Timeout in seconds for package installation. Minimum value is 60.',
+      'No'
+    ],
+    [
+      'onFailure',
+      'string',
+      'block',
+      'Behavior on installation failure. `block` prevents the pod from starting. `allow` lets the pod start without the packages.',
+      'No'
+    ]
+  ]}
+/>
+
+## PythonPackagesCredentials
+
+Credentials for private PyPI registry authentication.
+
+<OptionTable
+  options={[
+    [
+      'secretRef',
+      {'href': '#secretreference', label: 'SecretReference'},
+      '',
+      'Reference to a Secret containing PyPI registry credentials.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## SecretReference
+
+Reference to a Kubernetes Secret containing registry credentials.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Name of the Secret containing credentials.',
+      'Yes'
+    ],
+    [
+      'usernameKey',
+      'string',
+      'username',
+      'Key in the Secret for the username.',
+      'No'
+    ],
+    [
+      'passwordKey',
+      'string',
+      'password',
+      'Key in the Secret for the password.',
+      'No'
+    ]
   ]}
 />
 

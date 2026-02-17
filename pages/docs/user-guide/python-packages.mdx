@@ -1,0 +1,237 @@
+
+import { Callout } from 'nextra/components'
+
+# Python Packages
+
+## Overview
+
+KasprApps support automatic Python package installation via init containers. When you specify a `pythonPackages` section in your `KasprApp` spec, the operator creates an init container that installs the listed packages before the main application starts.
+
+**Key Features:**
+- Declarative package management via Kubernetes CRDs
+- Three cache modes: **PVC** (shared), **emptyDir** (per-pod), and **GCS** (cloud storage)
+- Private PyPI registry support with credential management
+- Configurable retries, timeouts, and failure policies
+
+---
+
+## Quick Start
+
+Add a `pythonPackages` section to your `KasprApp` spec:
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprApp
+metadata:
+  name: my-app
+spec:
+  bootstrapServers: kafka:9092
+  storage:
+    type: persistent-claim
+    class: standard
+    size: 1Gi
+  pythonPackages:
+    packages:
+      - requests
+      - pandas>=2.0.0
+      - numpy
+```
+
+The operator generates an init container that runs `pip install` with the specified packages. Once installation completes, the main container starts with all packages available.
+
+---
+
+## Cache Modes
+
+Caching avoids re-downloading packages on every pod restart. Three cache modes are available:
+
+### emptyDir (Default)
+
+When no cache is configured (or `cache.enabled: false` with `type: pvc`), each pod uses ephemeral emptyDir storage. Packages are re-installed on every pod restart.
+
+```yaml
+pythonPackages:
+  packages:
+    - requests
+```
+
+### PVC Cache
+
+Uses a shared `PersistentVolumeClaim` with `ReadWriteMany` access mode. All pods in the StatefulSet share the same cache, so packages are downloaded once and reused.
+
+```yaml
+pythonPackages:
+  packages:
+    - requests
+    - pandas>=2.0.0
+  cache:
+    enabled: true
+    storageClass: efs-sc
+    size: 512Mi
+```
+
+<Callout type="warning">PVC cache requires a storage class that supports `ReadWriteMany` access mode (e.g., EFS, NFS, CephFS).</Callout>
+
+File-level locking (`flock`) ensures that concurrent pod startups don't corrupt the cache.
+
+### GCS Cache
+
+Uses Google Cloud Storage as a remote package cache. The init container downloads a cached archive from GCS, installs packages, and uploads an updated archive after installation.
+
+```yaml
+pythonPackages:
+  packages:
+    - requests
+    - pandas>=2.0.0
+  cache:
+    type: gcs
+    gcs:
+      bucket: my-packages-bucket
+      secretRef:
+        name: gcs-sa-key
+```
+
+<Callout type="info">GCS cache requires a service account key with read/write access to the specified bucket. The key must be stored in a Kubernetes Secret.</Callout>
+
+---
+
+## GCS Cache
+
+### Prerequisites
+
+1. **GCS Bucket** — Create a bucket for storing package archives.
+2. **Service Account** — Create a GCP service account with `storage.objects.get`, `storage.objects.create`, and `storage.objects.list` permissions on the bucket.
+3. **Kubernetes Secret** — Store the service account key JSON in a Secret:
+
+```bash
+kubectl create secret generic gcs-sa-key \
+  --from-file=sa.json=path/to/service-account-key.json \
+  -n <namespace>
+```
+
+### Configuration
+
+```yaml
+pythonPackages:
+  packages:
+    - requests
+    - pandas>=2.0.0
+  cache:
+    type: gcs
+    gcs:
+      bucket: my-packages-bucket
+      prefix: "kaspr-packages/"       # Optional, defaults to "kaspr-packages/"
+      maxArchiveSize: "1Gi"            # Optional, defaults to "1Gi"
+      secretRef:
+        name: gcs-sa-key              # Name of the K8s Secret
+        key: sa.json                   # Key within the Secret (default: "sa.json")
+```
+
+### How It Works
+
+1. The init container mounts the service account key from the Secret.
+2. It authenticates with GCS using a self-signed JWT and OAuth2 token exchange — no external tools required.
+3. If a cached archive exists in the bucket, it downloads and extracts it.
+4. `pip install` runs with the cache directory, installing only missing or updated packages.
+5. After installation, the updated cache is archived and uploaded back to GCS.
+
+<Callout type="tip">The archive key is derived from a hash of the package list and configuration. Changing the package list automatically creates a new cache entry.</Callout>
+
+### Limitations
+
+- Requires `openssl` CLI in the container image (available in the default Kaspr base image).
+- Archives exceeding `maxArchiveSize` are skipped during upload.
+- Authentication uses a service account key JSON file — Workload Identity is not currently supported.
+
+---
+
+## Private Registries
+
+To install packages from a private PyPI registry, provide credentials via a Kubernetes Secret:
+
+```bash
+kubectl create secret generic pypi-creds \
+  --from-literal=username=myuser \
+  --from-literal=password=mytoken \
+  -n <namespace>
+```
+
+```yaml
+pythonPackages:
+  packages:
+    - my-private-package
+  indexUrl: https://private.pypi.org/simple
+  credentials:
+    secretRef:
+      name: pypi-creds
+      usernameKey: username    # Defaults to "username"
+      passwordKey: password    # Defaults to "password"
+```
+
+You can also specify additional index URLs and trusted hosts:
+
+```yaml
+pythonPackages:
+  packages:
+    - my-private-package
+    - requests
+  indexUrl: https://private.pypi.org/simple
+  extraIndexUrls:
+    - https://pypi.org/simple
+  trustedHosts:
+    - private.pypi.org
+```
+
+---
+
+## Install Policy
+
+Control retry behavior and failure handling:
+
+```yaml
+pythonPackages:
+  packages:
+    - requests
+  installPolicy:
+    retries: 3          # Number of retry attempts (default: 3)
+    timeout: 600        # Timeout in seconds (default: 600)
+    onFailure: block    # "block" (default) or "allow"
+```
+
+| Policy | Behavior |
+|--------|----------|
+| `block` | Pod init container fails and the pod does not start. Kubernetes will restart the pod according to its restart policy. |
+| `allow` | Pod starts without the packages. The main container runs but may fail if it depends on the missing packages. |
+
+---
+
+## Best Practices
+
+- **Pin package versions** — Use exact versions (e.g., `pandas==2.0.3`) or minimum versions (e.g., `pandas>=2.0.0`) for reproducible builds.
+- **Use GCS cache for large teams** — GCS cache works across node boundaries and doesn't require RWX-capable storage classes.
+- **Set resource limits** — Configure `resources` on the init container to prevent package installation from consuming excessive cluster resources.
+- **Use `block` failure policy in production** — Ensure pods don't start with missing dependencies.
+
+```yaml
+pythonPackages:
+  packages:
+    - requests==2.31.0
+    - pandas==2.0.3
+  cache:
+    type: gcs
+    gcs:
+      bucket: my-packages-bucket
+      secretRef:
+        name: gcs-sa-key
+  installPolicy:
+    retries: 3
+    timeout: 600
+    onFailure: block
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+```
