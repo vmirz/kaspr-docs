@@ -101,6 +101,12 @@ export const pageMap = [{
         "sidebarTitle": "Patterns"
       }
     }, {
+      name: "python-packages",
+      route: "/docs/user-guide/python-packages",
+      frontMatter: {
+        "sidebarTitle": "Python Packages"
+      }
+    }, {
       name: "scheduler",
       route: "/docs/user-guide/scheduler",
       frontMatter: {
