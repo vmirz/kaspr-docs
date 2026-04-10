@@ -62,6 +62,14 @@ Tasks provide a powerful way to handle asynchronos operations in a kaspr applica
 
 A webview ([KasprWebView](/api-reference/v1alpha1#kasprwebview)) connects web-based interactions with stream processing workflows. It allows you to expose your stream processing pipelines as HTTP endpoints, enabling external systems, applications, or users to interact with your data processing logic using standard web requests. By bridging HTTP-based communication with Kaspr's stream processing capabilities, WebViews provide a flexible and scalable way to integrate real-time data processing into web-accessible services.
 
+## Join
+
+A join ([KasprJoin](/api-reference/v1alpha1#kasprjoin)) declares a reactive key join between two [KasprTable](#table) resources. When a record changes in either table, the join automatically emits a combined result — containing both the left and right records — to a named output channel. A [KasprAgent](#agent) can then consume this channel to process the joined data.
+
+Joins are useful when you need to correlate records across two tables using keys, where a key can be extracted from the table's value. For example, joining an `orders` table (keyed by `order_id`) with a `products` table (keyed by `product_id`) to enrich orders with product details. The join uses a small Python `extractor` function to extract the foreign key from the left table's values.
+
+Joins support two semantics: **inner** (only emit when both sides match) and **left** (emit even when the right side has no match). See the [Joins guide](/docs/user-guide/joins) for full details.
+
 ## Channel
 
 A channel ([KasprChannel](/api-reference/v1alpha1#kasprchannel)) is an in-memory buffer or queue used for sending and receiving messages within a local application (process) only. In Kaspr, channels function similarly to Kafka topics, enabling communication between agents within the same app. However, unlike Kafka topics, messages in channels do not persist across application restarts, meaning they are temporary and are lost when the app is restarted.
