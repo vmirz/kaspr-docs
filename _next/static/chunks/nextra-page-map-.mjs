@@ -89,6 +89,12 @@ export const pageMap = [{
         "sidebarTitle": "Concepts"
       }
     }, {
+      name: "joins",
+      route: "/docs/user-guide/joins",
+      frontMatter: {
+        "sidebarTitle": "Joins"
+      }
+    }, {
       name: "kafka-basics",
       route: "/docs/user-guide/kafka-basics",
       frontMatter: {
@@ -111,6 +117,12 @@ export const pageMap = [{
       route: "/docs/user-guide/scheduler",
       frontMatter: {
         "sidebarTitle": "Scheduler"
+      }
+    }, {
+      name: "tables",
+      route: "/docs/user-guide/tables",
+      frontMatter: {
+        "sidebarTitle": "Tables"
       }
     }, {
       name: "webviews",
