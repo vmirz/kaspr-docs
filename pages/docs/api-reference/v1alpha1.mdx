@@ -6,6 +6,8 @@ import { OptionTable } from 'components/table'
 ## Resources Types
 - [KasprApp](#kasprapp)
 - [KasprAgent](#kaspragent)
+- [KasprJoin](#kasprjoin)
+- [KasprTable](#kasprtable)
 - [KasprTask](#kasprtask)
 - [KasprWebView](#kasprwebview)
 
@@ -651,6 +653,344 @@ Reference to a `KasprTable` and how it is made available to an operation's funct
       '',
       "The name of the parameter in which the table is made available in the operation's function.",
       'Yes'
+    ]
+  ]}
+/>
+
+## KasprJoin
+
+A reactive key join between two `KasprTable` resources. Emits combined results to a named output channel when either table changes.
+
+<OptionTable
+  options={[
+    [
+      'apiVersion',
+      'string',
+      'kaspr.io/v1alpha1',
+      '',
+      'Yes'
+    ],
+    [
+      'kind',
+      'string',
+      'KasprJoin',
+      '',
+      'Yes'
+    ],
+    [
+      'metadata',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta', label: 'ObjectMeta'},
+      '{}',
+      'Metadata that all persisted resources must have. A join must declare a label `kaspr.io/app` with the value of the app name it belongs to.',
+      'Yes'
+    ],
+    [
+      'spec',
+      {'href': '#kasprjoinspec', label: 'KasprJoinSpec'},
+      '{}',
+      'Specification of the desired behavior of the KasprJoin.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprJoinSpec
+
+Specification of a key join between two tables.
+
+<OptionTable
+  options={[
+    [
+      'description',
+      'string',
+      '',
+      'A short description of the join for documentation purposes.',
+      'No'
+    ],
+    [
+      'leftTable',
+      'string',
+      '',
+      'Name of the left-side KasprTable resource. This is the "driving" table whose changes trigger foreign key extraction.',
+      'Yes'
+    ],
+    [
+      'rightTable',
+      'string',
+      '',
+      'Name of the right-side KasprTable resource (the "lookup" table). Must belong to the same KasprApp.',
+      'Yes'
+    ],
+    [
+      'extractor',
+      {'href': '#code', label: 'Code'},
+      '{}',
+      'Python function that extracts the join key from left-table values. The returned value is used to look up the corresponding record in the right table.',
+      'Yes'
+    ],
+    [
+      'type',
+      'string',
+      'inner',
+      'Join semantics. `inner` skips emission when the right side has no match. `left` emits with right=null when no match exists. Allowed values: `inner`, `left`.',
+      'No'
+    ],
+    [
+      'outputChannel',
+      'string',
+      '{name}-channel',
+      'Name of the output channel for joined results. KasprAgents reference this via `input.channel.name`.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprJoinStatus
+
+Status of a KasprJoin resource, populated by the operator.
+
+<OptionTable
+  options={[
+    [
+      'app',
+      'object',
+      '{}',
+      'Status of the referenced KasprApp. Contains `name` (string) and `status` (`AppFound` or `AppNotFound`).',
+      ''
+    ],
+    [
+      'leftTable',
+      'object',
+      '{}',
+      'Status of the referenced left KasprTable. Contains `name` (string) and `status` (`TableFound` or `TableNotFound`).',
+      ''
+    ],
+    [
+      'rightTable',
+      'object',
+      '{}',
+      'Status of the referenced right KasprTable. Contains `name` (string) and `status` (`TableFound` or `TableNotFound`).',
+      ''
+    ],
+    [
+      'configMap',
+      'string',
+      '',
+      'Name of the ConfigMap containing the serialized join spec.',
+      ''
+    ],
+    [
+      'hash',
+      'string',
+      '',
+      'Hash of the current join configuration.',
+      ''
+    ]
+  ]}
+/>
+
+## KasprTable
+
+A table is a distributed key-value store backed by a Kafka changelog topic, used for stateful stream processing within a `KasprApp`.
+
+<OptionTable
+  options={[
+    [
+      'apiVersion',
+      'string',
+      'kaspr.io/v1alpha1',
+      '',
+      'Yes'
+    ],
+    [
+      'kind',
+      'string',
+      'KasprTable',
+      '',
+      'Yes'
+    ],
+    [
+      'metadata',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta', label: 'ObjectMeta'},
+      '{}',
+      'Metadata that all persisted resources must have.',
+      'Yes'
+    ],
+    [
+      'spec',
+      {'href': '#kasprtablespec', label: 'KasprTableSpec'},
+      '{}',
+      'Specification of the desired table configuration.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprTableSpec
+
+Specification of a KasprTable resource.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'The name of the table.',
+      'Yes'
+    ],
+    [
+      'description',
+      'string',
+      '',
+      'A short description of the table.',
+      'No'
+    ],
+    [
+      'global',
+      'boolean',
+      'false',
+      'If true, the table is global. Global tables have a full copy of the data on every node.',
+      'No'
+    ],
+    [
+      'defaultSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Python code that returns a default value when a key is not found in the table.',
+      'No'
+    ],
+    [
+      'keySerializer',
+      'string',
+      'json',
+      'Serializer for the table key. Must be `raw` or `json`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Serializer for the table value. Must be `raw` or `json`.',
+      'No'
+    ],
+    [
+      'partitions',
+      'integer',
+      '',
+      'Number of partitions in the table\'s changelog topic.',
+      'No'
+    ],
+    [
+      'extraTopicConfigs',
+      'object',
+      '{}',
+      'Additional Kafka topic configurations applied when creating the table\'s changelog topic (e.g., `retention.ms`, `cleanup.policy`).',
+      'No'
+    ],
+    [
+      'options',
+      'object',
+      '{}',
+      'Advanced table configuration options.',
+      'No'
+    ],
+    [
+      'window',
+      {'href': '#kasprtablewindow', label: 'KasprTableWindow'},
+      '',
+      'Window configuration for the table. Enables tumbling or hopping windowed aggregation.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprTableWindow
+
+Window configuration for a table. Exactly one of `tumbling` or `hopping` should be specified.
+
+<OptionTable
+  options={[
+    [
+      'tumbling',
+      {'href': '#kasprtablewindowtumbling', label: 'KasprTableWindowTumbling'},
+      '',
+      'Tumbling window configuration. Windows are fixed-size, non-overlapping time intervals.',
+      'No'
+    ],
+    [
+      'hopping',
+      {'href': '#kasprtablewindowhopping', label: 'KasprTableWindowHopping'},
+      '',
+      'Hopping window configuration. Windows are fixed-size but advance by a step interval, so they may overlap.',
+      'No'
+    ],
+    [
+      'relativeTo',
+      'string',
+      'stream',
+      'How events are assigned to windows. Must be `stream` (event timestamp), `now` (wall-clock time), or `custom` (user-defined).',
+      'No'
+    ],
+    [
+      'relativeToSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Python function that extracts a timestamp from the event for window assignment. Only used when `relativeTo` is `custom`.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprTableWindowTumbling
+
+Tumbling window configuration. Windows are fixed-size, non-overlapping time intervals.
+
+<OptionTable
+  options={[
+    [
+      'size',
+      'string',
+      '',
+      'The window duration (e.g., `30s`, `1m`, `1h`, `1d`).',
+      'Yes'
+    ],
+    [
+      'expires',
+      'string',
+      '',
+      'How long to retain data for each window after it closes (e.g., `30s`, `1m`, `1h`, `1d`).',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprTableWindowHopping
+
+Hopping window configuration. Windows are fixed-size and advance by a step interval.
+
+<OptionTable
+  options={[
+    [
+      'size',
+      'string',
+      '',
+      'The window duration (e.g., `30s`, `1m`, `1h`, `1d`).',
+      'Yes'
+    ],
+    [
+      'step',
+      'string',
+      '',
+      'The interval at which new windows are created (e.g., `30s`, `1m`, `1h`, `1d`).',
+      'Yes'
+    ],
+    [
+      'expires',
+      'string',
+      '',
+      'How long to retain data for each window after it closes (e.g., `30s`, `1m`, `1h`, `1d`).',
+      'No'
     ]
   ]}
 />

@@ -310,6 +310,41 @@ This automatic rebalancing means agents can scale horizontally without manual in
 
 ---
 
+## Consuming a Join Channel
+
+Agents can consume the output of a [KasprJoin](/docs/user-guide/joins) by referencing its output channel name in the input configuration. This allows agents to process joined records from two tables without managing the join logic themselves.
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: process-joined-data
+  labels:
+    kaspr.io/app: my-app
+spec:
+  input:
+    channel:
+      name: orders-products-joined  # matches the KasprJoin's outputChannel
+  processors:
+    pipeline:
+      - handle-joined
+    operations:
+      - name: handle-joined
+        map:
+          entrypoint: process
+          python: |
+            def process(value):
+                left_record = value["left"]
+                right_record = value["right"]
+                return {"merged": {**left_record, **right_record}}
+```
+
+The joined value has the structure `{"left": ..., "right": ...}` where `left` is the record from the left table and `right` is the matching record from the right table. See the [Joins guide](/docs/user-guide/joins) for full details.
+
+<Callout type="info">The channel name must exactly match the `outputChannel` (or default `{name}-channel`) defined on the `KasprJoin` resource.</Callout>
+
+---
+
 ## FAQ & Troubleshooting
 
 **Q: Why isn’t my agent processing events?**

@@ -1,3 +1,4 @@
+import './ssr-polyfill.js'
 import path from 'node:path'
 import nextra from 'nextra'
 
