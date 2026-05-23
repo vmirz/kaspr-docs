@@ -9,7 +9,7 @@ export default {
   "python-packages": "Python Packages - Dependency Management",
   patterns: "Agent Patterns - Common Use Cases",
   scheduler: {
-    title: "Scheduler - Time-Controlled Event Handling",
-    display: 'hidden'  // This will also hide the page
+    title: "Scheduler - Delayed Event Handling",
+     //display: 'hidden'  // This will also hide the page
   },
 }
