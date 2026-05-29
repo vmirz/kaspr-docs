@@ -74,6 +74,34 @@ Example payload shape:
 - If timestamp is in the future, message is delivered at scheduled time.
 - If timestamp is in the past, message is delivered immediately.
 
+## Replace a Scheduled Message (REPLACE)
+
+Use `REPLACE` when you want to update an existing scheduled message identified by request id.
+
+To replace, publish to `<app-id>-schedule-requests` with:
+
+- `x-scheduler-action: REPLACE`
+- `x-scheduler-request-id: <same id used at schedule time>`
+- `x-scheduler-deliver-to: <destination topic>`
+- `x-scheduler-deliver-at: <new UTC ISO timestamp>`
+
+`REPLACE` requires both target fields (`deliver-to`, `deliver-at`) and identity (`request-id`).
+
+### Replace Semantics
+
+- If the request id exists, scheduler removes the previous row and inserts the new row.
+- If the request id does not exist, scheduler treats it as a new schedule with that id.
+- If the existing schedule is strictly identical (same time, destination, key, value, headers), scheduler performs a no-op replacement.
+
+Example headers:
+
+```text
+x-scheduler-action=REPLACE
+x-scheduler-request-id=reminder-order-123
+x-scheduler-deliver-to=reminders-topic
+x-scheduler-deliver-at=2026-05-24T13:00:00Z
+```
+
 ## Cancel a Scheduled Message (CANCEL)
 
 To cancel, publish to `<app-id>-schedule-requests` with:
@@ -106,8 +134,11 @@ Common rejection reasons:
 
 - Missing `x-scheduler-deliver-at` for `ADD`.
 - Missing `x-scheduler-deliver-to` for `ADD`.
+- Missing `x-scheduler-deliver-at` for `REPLACE`.
+- Missing `x-scheduler-deliver-to` for `REPLACE`.
 - Invalid timestamp format for `x-scheduler-deliver-at`.
 - Missing `x-scheduler-request-id` for `CANCEL`.
+- Missing `x-scheduler-request-id` for `REPLACE`.
 
 Rejection records include original key/value/headers plus error details.
 
@@ -120,7 +151,7 @@ Rejection records include original key/value/headers plus error details.
 ## Production Checklist
 
 - Use UTC timestamps end to end.
-- Include `x-scheduler-request-id` on all scheduled messages if you need cancellation.
+- Include `x-scheduler-request-id` on all scheduled messages if you need cancellation or replacement.
 - Start with default partitioning, then increase `schedulerTopicPartitions` for higher throughput.
 - Monitor rejections topic and scheduler lag/throughput metrics.
 - Keep consumer handlers idempotent to handle duplicate deliveries safely.
@@ -135,13 +166,19 @@ Rejection records include original key/value/headers plus error details.
 
 ### Message was rejected
 
-- Validate required headers for selected action (`ADD` or `CANCEL`).
+- Validate required headers for selected action (`ADD`, `CANCEL`, or `REPLACE`).
 - Validate timestamp is parseable ISO UTC.
 
 ### Cancel did not stop delivery
 
 - Confirm `x-scheduler-request-id` exactly matches original scheduled request.
 - Confirm cancel arrived before dispatch window.
+
+### Replace had no visible effect
+
+- Confirm `x-scheduler-request-id` matches the existing scheduled message.
+- Check `kms_messages_replace_noop` to see if replacement was a strict no-op.
+- Validate replacement timestamp/topic differ from the existing entry when change is expected.
 
 ## Quick Reference
 
@@ -155,3 +192,8 @@ Rejection records include original key/value/headers plus error details.
 
 - Topic: `<app-id>-schedule-requests`
 - Required headers: `x-scheduler-action=CANCEL`, `x-scheduler-request-id`
+
+### Action: REPLACE
+
+- Topic: `<app-id>-schedule-requests`
+- Required headers: `x-scheduler-action=REPLACE`, `x-scheduler-request-id`, `x-scheduler-deliver-to`, `x-scheduler-deliver-at`
