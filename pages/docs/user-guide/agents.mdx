@@ -223,6 +223,59 @@ init:
 <Callout type="info">Use `init` for resource setup, environment validation, or loading configuration.</Callout>
 
 
+#### Handler Context (`app` and `event`)
+
+Inside `init` and operation handlers (`map`, `filter`, etc.), Kaspr provides a `context` dict in scope.
+
+```python
+app = context["app"]
+event = context["event"]
+```
+
+- `context["app"]` gives access to the underlying app instance.
+- `context["event"]` gives the current event object.
+
+For graceful shutdown logic, check `app.should_stop` in long-running handlers and exit cleanly when it becomes `True`.
+
+```python
+def process(value):
+    app = context["app"]
+    if app.should_stop:
+        # Flush state, release resources, then return.
+        return value
+    return value
+```
+
+`event` exposes both deserialized data and broker-level metadata:
+
+- `event.key`, `event.value`: deserialized Python-native key/value.
+- `event.message.key`, `event.message.value`: raw serialized payloads from Kafka.
+- `event.message.partition`: source partition id.
+- `event.message.offset`: offset within the partition.
+- `event.message.timestamp`: message timestamp (Unix epoch).
+
+```python
+def inspect(value):
+    event = context["event"]
+    print("decoded", event.key, event.value)
+    print("raw", event.message.key, event.message.value)
+    print("position", event.message.partition, event.message.offset)
+    return value
+```
+
+When using input buffering with `take`, `context["event"]` is a list of event objects (aligned with the buffered values).
+
+```python
+def process_batch(values):
+    events = context["event"]  # list[Event]
+    for value, event in zip(values, events):
+        print(event.message.partition, event.message.offset, value)
+    return values
+```
+
+<Callout type="tip">Use handler context when you need graceful shutdown checks, low-level message diagnostics, or partition/offset-aware processing.</Callout>
+
+
 #### Table Access
 
 Agents can reference state tables and use them as inputs to their operations.
