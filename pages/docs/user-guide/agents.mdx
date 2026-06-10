@@ -223,7 +223,7 @@ init:
 <Callout type="info">Use `init` for resource setup, environment validation, or loading configuration.</Callout>
 
 
-#### Handler Context (`app` and `event`)
+#### Handler Context
 
 Inside `init` and operation handlers (`map`, `filter`, etc.), Kaspr provides a `context` dict in scope.
 
@@ -235,14 +235,25 @@ event = context["event"]
 - `context["app"]` gives access to the underlying app instance.
 - `context["event"]` gives the current event object.
 
-For graceful shutdown logic, check `app.should_stop` in long-running handlers and exit cleanly when it becomes `True`.
+For graceful shutdown logic, check `app.should_stop` inside long-running or blocking work and exit cleanly when it becomes `True`.
 
 ```python
 def process(value):
     app = context["app"]
-    if app.should_stop:
-        # Flush state, release resources, then return.
-        return value
+    chunks = value.get("chunks", [])
+    processed = []
+
+    for chunk in chunks:
+        # If a shutdown signal arrives mid-work, stop early and return.
+        if app.should_stop:
+            flush_partial_results(processed)
+            value["interrupted"] = True
+            value["processed_chunks"] = len(processed)
+            return value
+
+        processed.append(do_expensive_io(chunk))
+
+    finalize_results(processed)
     return value
 ```
 
