@@ -204,6 +204,20 @@ Specification of the desired settings of the application.
       'No'
     ],
     [
+      'keySerializer',
+      'string',
+      'raw',
+      'Default serializer for message keys across the app. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Default serializer for message values across the app. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
       'storeRocksdbWriteBufferSize',
       'integer',
       '67108864',
@@ -403,7 +417,7 @@ Input topic configuration for the KasprAgent.
     [
       'keySerializer',
       'string',
-      'json',
+      'raw',
       'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
       'No'
     ],
@@ -495,7 +509,7 @@ Output topic configuration for the KasprAgent.
     [
       'keySerializer',
       'string',
-      'json',
+      'raw',
       'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
       'No'
     ],
@@ -863,7 +877,7 @@ Specification of a KasprTable resource.
     [
       'keySerializer',
       'string',
-      'json',
+      'raw',
       'Serializer for the table key. Must be `raw` or `json`.',
       'No'
     ],

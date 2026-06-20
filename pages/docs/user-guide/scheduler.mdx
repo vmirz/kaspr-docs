@@ -30,14 +30,25 @@ spec:
 
 Optional tuning:
 
-- `schedulerTopicPartitions`: number of partitions for scheduler internal topics.
+- `schedulerTopicPartitions`: number of partitions for scheduler internal topics (default: 1).
 - `schedulerDebugStatsEnabled`: enable periodic scheduler stats logs.
 
-After enabling, scheduler topics are created using your app id prefix:
+### Automatically Created Kafka Topics
 
-- `<app-id>-schedule-requests`
-- `<app-id>-schedule-actions`
-- `<app-id>-schedule-rejections`
+When scheduler is enabled, the following topics are automatically created:
+
+- `<app-id>-schedule-requests` — Client publishes scheduling actions here.
+- `<app-id>-schedule-actions` — Internal topic for action processing.
+- `<app-id>-schedule-rejections` — Invalid requests are sent here.
+
+Topics are created with the number of partitions specified by `schedulerTopicPartitions`.
+
+### Automatically Created Internal Tables
+
+Scheduler uses Kafka-backed changelog tables (stored as internal topics):
+
+- `<app-id>-timetable` — Stores scheduled messages keyed by delivery time.
+- `<app-id>-schedule-index` — Reverse index mapping request IDs to timetable locations.
 
 ## Publish a Scheduled Message (ADD)
 
@@ -124,13 +135,151 @@ x-scheduler-request-id=reminder-order-123
 - If the request id is unknown, no message is canceled.
 - If the message is already being delivered, cancellation may be too late.
 
+## Recurring Scheduled Messages (Cron)
+
+Scheduler also supports recurring message delivery using cron expressions. A cron fires according to a schedule and automatically re-schedules itself.
+
+### Enable Cron
+
+Cron is an optional feature that requires scheduler to be enabled. Enable it on [KasprApp](/api-reference/v1alpha1#kasprapp):
+
+- `schedulerCronEnabled: true`
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprApp
+metadata:
+	name: orders-app
+spec:
+	config:
+		schedulerEnabled: true
+		schedulerCronEnabled: true
+```
+
+### Automatically Created Internal Tables (Cron-Specific)
+
+When cron is enabled, scheduler creates additional Kafka-backed changelog tables:
+
+- `<app-id>-cron-registry` — Stores cron definitions (expression, destination, policy, status).
+- `<app-id>-cron-due-index` — Efficient index for finding crons due in each minute bucket.
+
+### Create a Cron (CRON_ADD)
+
+Send a message to `<app-id>-schedule-requests` with:
+
+- `x-scheduler-action: CRON_ADD`
+- `x-scheduler-cron-expr`: valid cron expression (e.g., `0 */5 * * * *` for every 5 minutes).
+- `x-scheduler-deliver-to`: destination topic name.
+- `x-scheduler-request-id`: unique cron id (used for pause/resume/cancel).
+- `x-scheduler-cron-missed-fire-policy` (optional): `"replay"` (default) or `"skip"`.
+
+Example headers:
+
+```text
+x-scheduler-action=CRON_ADD
+x-scheduler-request-id=hourly-report-cron
+x-scheduler-cron-expr=0 * * * * *
+x-scheduler-deliver-to=reports-topic
+x-scheduler-cron-missed-fire-policy=replay
+```
+
+#### Missed Fire Policy
+
+When scheduler recovers from downtime or a cron is resumed, the `missed_fire_policy` determines how to handle fires that occurred while the cron was offline:
+
+- **"replay"** (default): Materialize all missed fires. Use for work that must happen even if delayed (e.g., daily reports, reconciliation jobs).
+- **"skip"**: Advance the cron to now and skip missed fires. Use for periodic status checks or lightweight monitoring tasks where historical backfill is unnecessary.
+
+### Pause a Cron (CRON_PAUSE)
+
+Pause a cron to temporarily stop firing:
+
+- `x-scheduler-action: CRON_PAUSE`
+- `x-scheduler-request-id: <cron id>`
+
+Example headers:
+
+```text
+x-scheduler-action=CRON_PAUSE
+x-scheduler-request-id=hourly-report-cron
+```
+
+### Resume a Cron (CRON_RESUME)
+
+Resume a paused cron. The cron respects its `missed_fire_policy`:
+
+- **"replay"**: Materialize any fires that occurred while paused.
+- **"skip"**: Advance to now, skipping the pause gap.
+
+Send:
+
+- `x-scheduler-action: CRON_RESUME`
+- `x-scheduler-request-id: <cron id>`
+
+Example headers:
+
+```text
+x-scheduler-action=CRON_RESUME
+x-scheduler-request-id=hourly-report-cron
+```
+
+### Cancel a Cron (CRON_CANCEL)
+
+Permanently remove a cron:
+
+- `x-scheduler-action: CRON_CANCEL`
+- `x-scheduler-request-id: <cron id>`
+
+Example headers:
+
+```text
+x-scheduler-action=CRON_CANCEL
+x-scheduler-request-id=hourly-report-cron
+```
+
+### Cron Semantics and Guarantees
+
+- **Self-healing**: Crons automatically recover after arbitrary-length downtime (including service restarts). The missed_fire_policy determines whether missed fires are replayed or skipped.
+- **No global ordering**: Fires are delivered at-least-once per partition; partition ordering is preserved but not global.
+- **Minimum interval**: Cron expressions must fire at least 5 seconds apart (configurable via `schedulerCronMinIntervalSeconds`).
+
+### Cron Examples
+
+#### Daily Report at 9 AM UTC
+
+```text
+x-scheduler-request-id=daily-report-cron
+x-scheduler-cron-expr=0 9 * * * *
+x-scheduler-deliver-to=reports-topic
+x-scheduler-cron-missed-fire-policy=replay
+```
+
+#### Every 5 Minutes (Monitoring)
+
+```text
+x-scheduler-request-id=monitor-check-cron
+x-scheduler-cron-expr=*/5 * * * * *
+x-scheduler-deliver-to=monitoring-topic
+x-scheduler-cron-missed-fire-policy=skip
+```
+
+#### Every Hour on the Hour
+
+```text
+x-scheduler-request-id=hourly-sync-cron
+x-scheduler-cron-expr=0 * * * * *
+x-scheduler-deliver-to=sync-topic
+x-scheduler-cron-missed-fire-policy=replay
+```
+
+
 ## Invalid Requests and Rejections
 
 Invalid scheduler requests are sent to:
 
 - `<app-id>-schedule-rejections`
 
-Common rejection reasons:
+Common rejection reasons for regular schedules (ADD/REPLACE):
 
 - Missing `x-scheduler-deliver-at` for `ADD`.
 - Missing `x-scheduler-deliver-to` for `ADD`.
@@ -139,6 +288,14 @@ Common rejection reasons:
 - Invalid timestamp format for `x-scheduler-deliver-at`.
 - Missing `x-scheduler-request-id` for `CANCEL`.
 - Missing `x-scheduler-request-id` for `REPLACE`.
+
+Common rejection reasons for crons:
+
+- Missing or invalid `x-scheduler-cron-expr` for `CRON_ADD`.
+- Cron expression fires faster than minimum interval (default 5 seconds).
+- Missing `x-scheduler-deliver-to` for `CRON_ADD`.
+- Missing `x-scheduler-request-id` for `CRON_ADD`, `CRON_PAUSE`, `CRON_RESUME`, or `CRON_CANCEL`.
+- Invalid `x-scheduler-cron-missed-fire-policy` (must be `"replay"` or `"skip"`).
 
 Rejection records include original key/value/headers plus error details.
 
@@ -155,6 +312,8 @@ Rejection records include original key/value/headers plus error details.
 - Start with default partitioning, then increase `schedulerTopicPartitions` for higher throughput.
 - Monitor rejections topic and scheduler lag/throughput metrics.
 - Keep consumer handlers idempotent to handle duplicate deliveries safely.
+- For crons: choose `missed_fire_policy` based on your semantics (replay for "must happen" work, skip for monitoring/checks).
+- For crons: set `x-scheduler-request-id` to a stable, predictable id so you can pause/resume/cancel them.
 
 ## Quick Troubleshooting
 
@@ -180,6 +339,24 @@ Rejection records include original key/value/headers plus error details.
 - Check `kms_messages_replace_noop` to see if replacement was a strict no-op.
 - Validate replacement timestamp/topic differ from the existing entry when change is expected.
 
+### Cron was not created
+
+- Check if scheduler and cron are both enabled.
+- Validate `x-scheduler-cron-expr` is a valid cron expression (e.g., `0 * * * * *`).
+- Check if cron expression fires too frequently (minimum 5 seconds).
+- Check if request was rejected in `<app-id>-schedule-rejections`.
+
+### Cron fires are missing after downtime
+
+- This is normal behavior with `missed_fire_policy=skip`. Cron advances to now instead of replaying.
+- If you need missed fires, change cron to use `missed_fire_policy=replay` by creating a new cron with the same id.
+- Check if cron was paused during downtime (check logs for CRON_PAUSE).
+
+### Cron paused, then resumed but fires are not caught up
+
+- Confirm the cron has `missed_fire_policy=replay` to backfill the pause gap.
+- If cron uses `missed_fire_policy=skip`, it advances to now without backfill on resume.
+
 ## Quick Reference
 
 ### Action: ADD
@@ -197,3 +374,25 @@ Rejection records include original key/value/headers plus error details.
 
 - Topic: `<app-id>-schedule-requests`
 - Required headers: `x-scheduler-action=REPLACE`, `x-scheduler-request-id`, `x-scheduler-deliver-to`, `x-scheduler-deliver-at`
+
+### Action: CRON_ADD
+
+- Topic: `<app-id>-schedule-requests`
+- Required headers: `x-scheduler-action=CRON_ADD`, `x-scheduler-request-id`, `x-scheduler-cron-expr`, `x-scheduler-deliver-to`
+- Optional headers: `x-scheduler-cron-missed-fire-policy` (default: `replay`)
+
+### Action: CRON_PAUSE
+
+- Topic: `<app-id>-schedule-requests`
+- Required headers: `x-scheduler-action=CRON_PAUSE`, `x-scheduler-request-id`
+
+### Action: CRON_RESUME
+
+- Topic: `<app-id>-schedule-requests`
+- Required headers: `x-scheduler-action=CRON_RESUME`, `x-scheduler-request-id`
+- Note: Respects cron's `missed_fire_policy` for handling pause gap.
+
+### Action: CRON_CANCEL
+
+- Topic: `<app-id>-schedule-requests`
+- Required headers: `x-scheduler-action=CRON_CANCEL`, `x-scheduler-request-id`
