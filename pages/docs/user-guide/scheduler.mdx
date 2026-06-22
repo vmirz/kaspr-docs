@@ -113,7 +113,7 @@ x-scheduler-deliver-to=reminders-topic
 x-scheduler-deliver-at=2026-05-24T13:00:00Z
 ```
 
-## Cancel a Scheduled Message (CANCEL)
+## Cancel a Scheduled Message
 
 To cancel, publish to `<app-id>-schedule-requests` with:
 
@@ -135,7 +135,7 @@ x-scheduler-request-id=reminder-order-123
 - If the request id is unknown, no message is canceled.
 - If the message is already being delivered, cancellation may be too late.
 
-## Recurring Scheduled Messages (Cron)
+## Recurring Scheduled Messages
 
 Scheduler also supports recurring message delivery using cron expressions. A cron fires according to a schedule and automatically re-schedules itself.
 
@@ -156,14 +156,14 @@ spec:
 		schedulerCronEnabled: true
 ```
 
-### Automatically Created Internal Tables (Cron-Specific)
+### Automatically Created Internal Tables
 
 When cron is enabled, scheduler creates additional Kafka-backed changelog tables:
 
 - `<app-id>-cron-registry` — Stores cron definitions (expression, destination, policy, status).
 - `<app-id>-cron-due-index` — Efficient index for finding crons due in each minute bucket.
 
-### Create a Cron (CRON_ADD)
+### Create a Cron
 
 Send a message to `<app-id>-schedule-requests` with:
 
@@ -190,7 +190,7 @@ When scheduler recovers from downtime or a cron is resumed, the `missed_fire_pol
 - **"replay"** (default): Materialize all missed fires. Use for work that must happen even if delayed (e.g., daily reports, reconciliation jobs).
 - **"skip"**: Advance the cron to now and skip missed fires. Use for periodic status checks or lightweight monitoring tasks where historical backfill is unnecessary.
 
-### Pause a Cron (CRON_PAUSE)
+### Pause a Cron
 
 Pause a cron to temporarily stop firing:
 
@@ -204,7 +204,7 @@ x-scheduler-action=CRON_PAUSE
 x-scheduler-request-id=hourly-report-cron
 ```
 
-### Resume a Cron (CRON_RESUME)
+### Resume a Cron
 
 Resume a paused cron. The cron respects its `missed_fire_policy`:
 
@@ -223,7 +223,7 @@ x-scheduler-action=CRON_RESUME
 x-scheduler-request-id=hourly-report-cron
 ```
 
-### Cancel a Cron (CRON_CANCEL)
+### Cancel a Cron
 
 Permanently remove a cron:
 
@@ -254,7 +254,7 @@ x-scheduler-deliver-to=reports-topic
 x-scheduler-cron-missed-fire-policy=replay
 ```
 
-#### Every 5 Minutes (Monitoring)
+#### Every 5 Minutes
 
 ```text
 x-scheduler-request-id=monitor-check-cron
