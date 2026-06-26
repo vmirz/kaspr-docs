@@ -243,7 +243,7 @@ The extractor must return a value that matches a key in the right table. If it r
 
 ## Key Serializers and Joins
 
-Both input topics and tables use `json` as the default key serializer - this means key joins work out of the box without any additional serializer configuration. However, if you override serializers on either side, it's important to keep them aligned.
+For joins to work, the key serialization used by the input topic must match the key serialization used by the table written by that agent.
 
 ### Why Serializers Matter
 
@@ -251,7 +251,7 @@ The join works by extracting a key from the left table's value and performing a 
 
 Consider two agents writing to the `orders` and `products` tables:
 
-- With `json` serialization (the default), `event.key` is a deserialized Python value (e.g., `"P100"`)
+- With `json` serialization, `event.key` is a deserialized Python value (e.g., `"P100"`)
 - With `raw` serialization, `event.key` is raw bytes (e.g., `b'"P100"'`)
 
 When you write `table[event.key] = value`, the table stores whatever type `event.key` is. If the table's `keySerializer` is `json` but the input topic uses `raw`, a raw-bytes key that already contains JSON quotes gets **double-encoded** — stored as `"\"P100\""` instead of `"P100"`.
@@ -264,10 +264,12 @@ Later, the extractor returns a clean value like `"P100"`, but the lookup searche
 The `keySerializer` on an agent's input topic must match the `keySerializer` on the table that the agent writes to.
 </Callout>
 
-Since both default to `json`, joins work correctly as long as you don't override one without the other. If you do need to change serializers, make sure both sides match:
+If they do not match, key lookups fail even when the logical key values look the same.
+
+Example of matching configuration:
 
 ```yaml
-# Agent writing to a JSON-serialized table — no keySerializer needed (both default to json)
+# Agent writing to a JSON-serialized table
 apiVersion: kaspr.io/v1alpha1
 kind: KasprAgent
 metadata:
@@ -278,7 +280,7 @@ spec:
   input:
     topic:
       name: raw-orders
-      # keySerializer defaults to json — matches the table's default
+      keySerializer: json
   processors:
     pipeline:
       - write-to-table
@@ -292,33 +294,14 @@ spec:
           python: |
             def write(value, orders):
                 event = context["event"]
-                orders[event.key] = value   # event.key is already deserialized
+                orders[event.key] = value
 ```
-
-### App-Level Default
-
-The app-level default `keySerializer` can be overridden in the `KasprApp` config if needed:
-
-```yaml
-apiVersion: kaspr.io/v1alpha1
-kind: KasprApp
-metadata:
-  name: order-system
-spec:
-  config:
-    keySerializer: json       # This is already the default
-    valueSerializer: json     # This is already the default
-```
-
-<Callout type="info">
-You only need to set these explicitly if you are migrating from an older version where the default key serializer was `raw`, or if you want to be explicit in your configuration.
-</Callout>
 
 ### Quick Reference
 
 | Input Topic `keySerializer` | Table `keySerializer` | `event.key` Type | Join Works? |
 |---|---|---|---|
-| `json` (default) | `json` (default) | Python object (str, int, etc.) | Yes |
+| `json` | `json` | Python object (str, int, etc.) | Yes |
 | `raw` | `json` | Raw bytes | No — double-encoded keys |
 | `raw` | `raw` | Raw bytes | Yes (but extractor must return bytes) |
 | `json` | `raw` | Python object | No — type mismatch |
