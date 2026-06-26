@@ -161,7 +161,7 @@ spec:
 When cron is enabled, scheduler creates additional Kafka-backed changelog tables:
 
 - `<app-id>-cron-registry` — Stores cron definitions (expression, destination, policy, status).
-- `<app-id>-cron-due-index` — Efficient index for finding crons due in each minute bucket.
+- `<app-id>-cron-due-index` — Efficient index for finding crons due.
 
 ### Create a Cron
 
