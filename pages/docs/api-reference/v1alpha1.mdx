@@ -146,6 +146,13 @@ Specification of the desired settings of the application.
       'false',
       'This setting controls whether or not the message scheduler is enabled.',
       'No'
+    ],
+    [
+      'schedulerCronEnabled',
+      'boolean',
+      'false',
+      'This setting controls whether or not cron scheduling support is enabled. When enabled, `schedulerEnabled` is also automatically enabled.',
+      'No'
     ], 
     [
       'schedulerDebugStatsEnabled',
@@ -201,6 +208,27 @@ Specification of the desired settings of the application.
       'number:float',
       '14400.0',
       "Number of seconds the janitor trails current from the highwater timetable location.",
+      'No'
+    ],
+    [
+      'schedulerCronTickIntervalSeconds',
+      'number:float',
+      '30.0',
+      'How often the cron ticker evaluates registry entries, in seconds.',
+      'No'
+    ],
+    [
+      'schedulerCronTickBufferSeconds',
+      'number:float',
+      '600.0',
+      'Extra lookahead buffer, in seconds, beyond the tick interval for materializing cron fires.',
+      'No'
+    ],
+    [
+      'schedulerCronMinIntervalSeconds',
+      'number:float',
+      '5.0',
+      'Minimum allowed interval, in seconds, between consecutive cron fires. Cron expressions that fire more frequently will be rejected.',
       'No'
     ],
     [
