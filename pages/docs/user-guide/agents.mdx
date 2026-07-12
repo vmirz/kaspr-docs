@@ -223,6 +223,142 @@ init:
 <Callout type="info">Use `init` for resource setup, environment validation, or loading configuration.</Callout>
 
 
+#### Using External Python Packages
+
+KasprAgents can use third-party Python libraries, but those packages must be installed at the `KasprApp` level first. Add them under `spec.pythonPackages` on the app, then reference them from your agent code. See the [Python Packages guide](/docs/user-guide/python-packages) for cache options, private registries, and installation policy details.
+
+For example, this app installs the Stripe SDK and provides the API key through an environment variable:
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprApp
+metadata:
+  name: payments-app
+spec:
+  bootstrapServers: kafka:9092
+  storage:
+    type: persistent-claim
+    class: standard
+    size: 1Gi
+  template:
+    kasprContainer:
+      env:
+        - name: STRIPE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe-api-key
+              key: api-key
+  pythonPackages:
+    packages:
+      - stripe==10.17.0
+```
+
+Once the package is available in the app container, import and configure it in the agent. A simple pattern is to initialize the SDK once in `init`, then reuse it in the operation handler:
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: create-payment-intent
+  labels:
+    kaspr.io/app: payments-app
+spec:
+  input:
+    topic:
+      name: checkout-requests
+  output:
+    topics:
+      - name: payment-results
+  processors:
+    pipeline:
+      - create-payment
+    init:
+      python: |
+        import os
+        import stripe
+
+        stripe_api_key = os.getenv("STRIPE_API_KEY")
+        if not stripe_api_key:
+            raise RuntimeError("Missing STRIPE_API_KEY")
+
+        stripe.api_key = stripe_api_key
+    operations:
+      - name: create-payment
+        map:
+          python: |
+            def create_payment(value):
+                intent = stripe.PaymentIntent.create(
+                    amount=value["amount"],
+                    currency=value.get("currency", "usd"),
+                    customer=value["customer_id"],
+                    automatic_payment_methods={"enabled": True},
+                    metadata={"order_id": value["order_id"]},
+                )
+
+                return {
+                    "order_id": value["order_id"],
+                    "payment_intent_id": intent["id"],
+                    "status": intent["status"],
+                    "client_secret": intent["client_secret"],
+                }
+```
+
+This keeps each event handler focused on per-event work only. The SDK setup happens once during startup, which reduces overhead and makes failures like missing credentials surface immediately.
+
+<Callout type="tip">Create SDK clients, database connections, HTTP sessions, and other shared resources in `init`. Avoid constructing them inside `map` or `filter` handlers, where they would be recreated for every event.</Callout>
+
+In production, prefer these practices when using external packages:
+
+- Store API keys and tokens in Kubernetes Secrets, not inline YAML.
+- Pin package versions so agent behavior stays reproducible across deployments.
+
+
+#### Package Complex Agent Logic as a Standalone Module
+
+For larger agents, a useful pattern is to build the domain logic as a normal Python package and treat Kaspr as the runtime harness around it. In this model, the `KasprAgent` is responsible for reading events, calling your package code, and routing the results, while the business logic lives in a reusable module with its own tests.
+
+This approach works well when you want to:
+
+- Develop and test the core application logic outside of the Kaspr CRD lifecycle.
+- Reuse the same logic across multiple Kaspr apps or agents.
+- Keep agent YAML focused on streaming concerns such as input, output, routing, and tables.
+- Reduce the amount of inline Python embedded directly in the CRD.
+
+For example, imagine a package named `payments_core` that contains the Stripe-specific payment workflow:
+
+```python
+from payments_core.checkout import PaymentService
+
+service = PaymentService()
+
+def create_payment(value):
+    return service.create_payment_intent(value)
+```
+
+In the agent, you can import that package and call its methods from your operation handlers:
+
+```yaml
+processors:
+  pipeline:
+    - create-payment
+  init:
+    python: |
+      from payments_core.checkout import PaymentService
+
+      service = PaymentService()
+  operations:
+    - name: create-payment
+      map:
+        python: |
+          def create_payment(value):
+              return service.create_payment_intent(value)
+```
+
+This keeps Kaspr-specific code thin and makes the package independently testable with ordinary Python unit and integration tests. You can validate payment rules, error handling, and request transformation without needing to deploy a `KasprAgent` for every test run.
+
+<Callout type="info">A good rule is: keep stream wiring in the `KasprAgent`, and move reusable business logic into importable Python modules. Kaspr handles event ingestion and delivery, while your package owns the application behavior.</Callout>
+
+
 #### Handler Context (`app` and `event`)
 
 Inside `init` and operation handlers (`map`, `filter`, etc.), Kaspr provides a `context` dict in scope.
