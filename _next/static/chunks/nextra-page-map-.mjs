@@ -125,6 +125,12 @@ export const pageMap = [{
         "sidebarTitle": "Tables"
       }
     }, {
+      name: "tasks",
+      route: "/docs/user-guide/tasks",
+      frontMatter: {
+        "sidebarTitle": "Tasks"
+      }
+    }, {
       name: "webviews",
       route: "/docs/user-guide/webviews",
       frontMatter: {
