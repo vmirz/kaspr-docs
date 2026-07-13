@@ -3,6 +3,7 @@ export default {
   //processors: 'Processors',
   "kafka-basics": "Kafka - Basics you need to know",
   agents: "Agents - Distributed stream processors",
+  tasks: "Tasks - Startup and Scheduled Jobs",
   tables: "Tables - Distributed Key-Value State",
   joins: "Joins - Table-to-Table Joins",
   webviews: "Webviews - Web interfaces for stream processing",

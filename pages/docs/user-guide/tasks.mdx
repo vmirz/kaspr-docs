@@ -1,0 +1,153 @@
+import { Callout } from 'nextra/components'
+
+# KasprTasks - Startup and Scheduled Jobs
+
+## What Is a KasprTask?
+
+A `KasprTask` runs Python code inside a `KasprApp` without consuming an input stream. Use tasks for startup initialization, periodic maintenance, housekeeping, or publishing scheduled trigger messages into Kafka topics.
+
+Tasks support three execution patterns:
+
+- **One-time task**: omit `schedule` and the task runs once when the app instance becomes ready.
+- **Interval task**: define `schedule.interval` for repeated execution on a fixed cadence.
+- **Cron task**: define `schedule.cron` for repeated execution on a cron schedule.
+
+Unlike `KasprAgent`, a task does not define `input` or `output`. Instead, it runs a processor pipeline and can produce side effects from the operation itself, such as emitting a Kafka message with `topicSend`.
+
+<Callout type="warning">Scheduled `KasprTask` executions are runtime-driven and best effort. They are not durable fires like the built-in scheduler. If the app is down, missed task executions are not replayed after restart; scheduling simply continues forward from the current runtime.</Callout>
+
+## When to Use Tasks
+
+Tasks are a good fit for:
+
+- Running one-time startup logic after the app becomes ready.
+- Emitting periodic control messages that trigger downstream agents.
+- Refreshing in-memory resources, caches, or reference data on a schedule.
+- Performing lightweight housekeeping jobs inside the app runtime.
+
+If you need durable delayed delivery or replay of missed scheduled work, use the [Scheduler guide](/docs/user-guide/scheduler) instead of `KasprTask`.
+
+## Basic Structure
+
+A task belongs to a `KasprApp` and uses the same inline Python processor model as agents. The main task-specific fields are:
+
+- `name`: logical task name.
+- `onLeader`: when `true`, only the leader instance runs the task.
+- `schedule`: optional recurring schedule using either `cron` or `interval`.
+- `processors`: pipeline, `init`, and operations to execute when the task fires.
+
+See the [KasprTask API reference](/docs/api-reference/v1alpha1#kasprtask) for the full schema.
+
+## One-Time Task
+
+When `schedule` is omitted, the task runs once when the app becomes ready. This is useful for startup announcements, warm-up steps, or initial synchronization.
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprTask
+metadata:
+  name: emit-startup-event
+  labels:
+    kaspr.io/app: payments-app
+spec:
+  name: emit-startup-event
+  description: Publish a startup event when the app is ready.
+  onLeader: true
+  processors:
+    pipeline:
+      - build-startup-event
+    operations:
+      - name: build-startup-event
+        map:
+          python: |
+            from datetime import datetime, timezone
+
+            def build_startup_event(_):
+                return {
+                    "type": "app-started",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+        topicSend:
+          name: app-lifecycle-events
+          valueSerializer: json
+          valueSelector:
+            python: |
+              def select_value(value):
+                  return value
+```
+
+With `onLeader: true`, only one replica emits the startup message. If `onLeader` is omitted or `false`, each ready app instance runs the task independently.
+
+## Fixed-Interval Task
+
+Use `schedule.interval` when the task should repeat on a simple cadence such as every 5 minutes or every hour.
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprTask
+metadata:
+  name: trigger-payment-reconciliation
+  labels:
+    kaspr.io/app: payments-app
+spec:
+  name: trigger-payment-reconciliation
+  description: Ask downstream agents to reconcile pending payments every 15 minutes.
+  onLeader: true
+  schedule:
+    interval: 15m
+  processors:
+    pipeline:
+      - build-request
+    operations:
+      - name: build-request
+        map:
+          python: |
+            from datetime import datetime, timezone
+
+            def build_request(_):
+                return {
+                    "requested_at": datetime.now(timezone.utc).isoformat(),
+                    "reason": "scheduled-reconciliation",
+                }
+        topicSend:
+          name: reconciliation-requests
+          valueSerializer: json
+          valueSelector:
+            python: |
+              def select_value(value):
+                  return value
+```
+
+This pattern is useful when the task itself is only responsible for triggering work, while normal `KasprAgent` resources perform the heavier downstream processing.
+
+## Cron Task
+
+Use `schedule.cron` when the task should run on a calendar-based schedule.
+
+```yaml
+schedule:
+  cron: "<your-cron-expression>"
+```
+
+For example, a daily reporting task can use a cron schedule to emit a report-generation request once per day. The processor structure is the same as the interval example; only the `schedule` block changes.
+
+## KasprTask vs Scheduler
+
+`KasprTask` and the built-in scheduler solve different problems:
+
+- **KasprTask** runs Python code inside the app process.
+- **KasprTask** is best effort and does not replay missed executions after downtime.
+- **Scheduler** durably stores scheduled messages and is the right choice when timing guarantees matter.
+- **Scheduler** is better for delayed or recurring delivery that must survive restarts.
+
+Use `KasprTask` for runtime jobs and use the scheduler for durable message scheduling.
+
+## Best Practices
+
+- Set `onLeader: true` for singleton jobs that should run only once per app deployment.
+- Keep one-time tasks idempotent, because restarts and rollouts may cause them to run again.
+- Put expensive setup in `processors.init` and reuse it from operation code.
+- Prefer publishing trigger messages with `topicSend` and letting agents handle heavier stream processing.
+- Package complex business logic into importable Python modules so you can test it outside the CRD and reuse it across tasks and agents.
+
+<Callout type="info">A strong pattern is to keep `KasprTask` focused on runtime orchestration and triggering, while reusable business logic lives in standalone Python packages that the task imports.</Callout>

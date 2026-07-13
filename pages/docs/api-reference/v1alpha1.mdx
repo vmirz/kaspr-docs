@@ -1037,6 +1037,286 @@ Hopping window configuration. Windows are fixed-size and advance by a step inter
   ]}
 />
 
+## KasprTask
+
+A startup or scheduled job that runs inside a `KasprApp` runtime.
+
+<OptionTable
+  options={[
+    [
+      'apiVersion',
+      'string',
+      'kaspr.io/v1alpha1',
+      '',
+      'Yes'
+    ],
+    [
+      'kind',
+      'string',
+      'KasprTask',
+      '',
+      'Yes'
+    ],
+    [
+      'metadata',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#objectmeta-v1-meta', label: 'ObjectMeta'},
+      '{}',
+      'Metadata that all persisted resources must have. A task must declare a label `kaspr.io/app` with the value of the app name it belongs to.',
+      'Yes'
+    ],
+    [
+      'spec',
+      {'href': '#kasprtaskspec', label: 'KasprTaskSpec'},
+      '{}',
+      'Specification of the desired behavior of the KasprTask.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprTaskSpec
+
+Specification of the desired behavior of the KasprTask.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'The name of the task.',
+      'Yes'
+    ],
+    [
+      'description',
+      'string',
+      '',
+      'A short description of what this task does.',
+      'No'
+    ],
+    [
+      'onLeader',
+      'boolean',
+      'false',
+      'Whether to run this task only on the leader instance.',
+      'No'
+    ],
+    [
+      'schedule',
+      {'href': '#kasprtaskschedule', label: 'KasprTaskSchedule'},
+      '{}',
+      'Optional recurring schedule. Omit to run once when the app becomes ready. Use `cron` or `interval` for recurring execution.',
+      'No'
+    ],
+    [
+      'processors',
+      {'href': '#kasprtaskprocessors', label: 'KasprTaskProcessors'},
+      '{}',
+      'Sequence of operations that run when the task fires.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprTaskSchedule
+
+Schedule configuration for recurring task execution.
+
+<OptionTable
+  options={[
+    [
+      'cron',
+      'string',
+      '',
+      'Cron expression defining the schedule.',
+      'No'
+    ],
+    [
+      'interval',
+      'string',
+      '',
+      'Interval duration (e.g., `10s`, `5m`, `1h`).',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprTaskProcessors
+
+Chain of processors that run when a task executes.
+
+<OptionTable
+  options={[
+    [
+      'pipeline',
+      'list',
+      '[]',
+      'Sequence of operations to run.',
+      'Yes'
+    ],
+    [
+      'init',
+      {'href': '#code', label: 'Code'},
+      '{}',
+      'Initialization code to run before task operations are invoked.',
+      'No'
+    ],
+    [
+      'operations',
+      'list',
+      '[]',
+      'Chain of operations to run when the task fires.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprTaskProcessorOperation
+
+A transform or action to take when a task executes.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'A unique name for the operation. This is used to identify the operation in the pipeline.',
+      'Yes'
+    ],
+    [
+      'tables',
+      {'href': '#kasprtaskprocessoroperationtable', label: 'KasprTaskProcessorOperationTable[]'},
+      '',
+      "List of tables which are made available in the operation's function.",
+      'No'
+    ],
+    [
+      'map',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Takes the current task value and returns the next value passed to the rest of the pipeline.',
+      'No'
+    ],
+    [
+      'filter',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Takes the current task value and determines if execution should continue. If the filter returns `true`, the value is passed forward; otherwise it is discarded.',
+      'No'
+    ],
+    [
+      'topicSend',
+      {'href': '#kasprtasktopicsend', label: 'KasprTaskTopicSend'},
+      '',
+      'Send a message to a Kafka topic as part of the operation.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprTaskProcessorOperationTable
+
+Reference to a `KasprTable` and how it is made available to a task operation function.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'The name of the `KasprTable` resource.',
+      'Yes'
+    ],
+    [
+      'paramName',
+      'string',
+      '',
+      "The name of the parameter in which the table is made available in the operation's function.",
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprTaskTopicSend
+
+Configuration for sending a Kafka message from a task operation.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Topic name. Required unless `nameSelector` is provided.',
+      'No'
+    ],
+    [
+      'nameSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to dynamically determine the topic name. Required unless `name` is provided.',
+      'No'
+    ],
+    [
+      'ack',
+      'boolean',
+      'false',
+      'Wait for broker acknoledgement before considering the message sent.',
+      'No'
+    ],
+    [
+      'keySerializer',
+      'string',
+      'raw',
+      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Serializer for the value portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'keySelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the key of the message. The code must define a function that takes a single argument and returns a value.',
+      'No'
+    ],
+    [
+      'valueSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the value of the message. The code must define a function that takes a single argument and returns a value.',
+      'No'
+    ],
+    [
+      'partitionSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the partition number of the message. The code must define a function that takes a single argument and returns an integer.',
+      'No'
+    ],
+    [
+      'headersSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the headers of the message. The code must define a function that takes a single argument and returns a key and value map.',
+      'No'
+    ],
+    [
+      'predicate',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` are skipped.',
+      'No'
+    ]
+  ]}
+/>
+
 ## KasprWebView
 
 A web view provides an HTTP endpoint to a `KasprApp`, enabling remote access to the application.
