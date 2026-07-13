@@ -213,6 +213,46 @@ pythonPackages:
 
 This pattern is useful for internal shared libraries that you want to version independently and reuse across multiple Kaspr apps.
 
+### Private Git Repository over SSH
+
+When `pip install` needs SSH-specific configuration such as a deploy key, known hosts file, or `GIT_SSH_COMMAND`, you can customize only the package installer init container via `template.pythonPackagesInitContainer`.
+
+More generally, this volume-mount pattern is not limited to SSH. It is generic enough to support other authentication methods as well, such as mounted certificates, custom credential files, or other tool-specific auth material that `pip`, `git`, or related helpers need during package installation.
+
+```yaml
+pythonPackages:
+  packages:
+    - git+ssh://git@github.com/my-org/private-payments-lib.git@v1.2.0#egg=private-payments-lib
+template:
+  pod:
+    volumes:
+      - name: github-ssh
+        secret:
+          secretName: github-deploy-key
+          items:
+            - key: id_ed25519
+              path: id_ed25519
+            - key: known_hosts
+              path: known_hosts
+  pythonPackagesInitContainer:
+    env:
+      - name: GIT_SSH_COMMAND
+        value: >-
+          ssh -i /var/run/secrets/github-ssh/id_ed25519
+          -o IdentitiesOnly=yes
+          -o UserKnownHostsFile=/var/run/secrets/github-ssh/known_hosts
+          -o StrictHostKeyChecking=yes
+    volumeMounts:
+      - name: github-ssh
+        mountPath: /var/run/secrets/github-ssh
+        readOnly: true
+```
+
+Requirements:
+
+- The Secret should contain both the private key and a `known_hosts` file.
+- The deploy key must have read access to the target repository.
+
 ### When to Use VCS Installs
 
 - Installing a shared internal library before it is published to a package index.
