@@ -184,6 +184,45 @@ pythonPackages:
 
 ---
 
+## URL and VCS Package Sources
+
+You can also use direct URL and VCS-style package specifications in `pythonPackages.packages`. This is useful when your dependency is hosted in a Git repository or is not published to a package index.
+
+### Public Git Repository
+
+```yaml
+pythonPackages:
+  packages:
+    - requests
+    - git+https://github.com/stripe/stripe-python.git@v13.0.1
+```
+
+The init container passes the package spec directly to `pip install`, so normal pip-style Git references work as expected.
+
+### Private Git Repository with Environment Variable Expansion
+
+You can also reference environment variables inside the package URL, for example when authenticating to a private repository:
+
+```yaml
+pythonPackages:
+  packages:
+    - git+https://${GITHUB_TOKEN}@github.com/my-org/private-payments-lib.git@v1.2.0
+```
+
+<Callout type="warning">When a package spec references an environment variable such as `${GITHUB_TOKEN}`, that variable must be defined in the operator environment. The operator validates this during reconciliation and fails fast if the variable is missing.</Callout>
+
+This pattern is useful for internal shared libraries that you want to version independently and reuse across multiple Kaspr apps.
+
+### When to Use VCS Installs
+
+- Installing a shared internal library before it is published to a package index.
+- Pulling an exact tagged release from Git.
+- Reusing standalone business logic packages across multiple Kaspr apps and agents.
+
+For production deployments, prefer immutable tags or commit SHAs over floating branches so package resolution stays reproducible.
+
+---
+
 ## Install Policy
 
 Control retry behavior and failure handling:
