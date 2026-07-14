@@ -109,7 +109,236 @@ Specification of the desired settings of the application.
       '',
       'Python package management configuration for automatic package installation via init containers.',
       'No'
+    ],
+    [
+      'template',
+      {'href': '#kasprapptemplate', label: 'KasprAppTemplate'},
+      '',
+      'Templates for Kubernetes resources created for the application, including the ServiceAccount, Pod, Service, Kaspr container and more.',
+      'No'
     ],                               
+  ]}
+/>
+
+## KasprAppTemplate
+
+Templates for Kubernetes resources created for a `KasprApp`.
+
+<OptionTable
+  options={[
+    [
+      'serviceAccount',
+      {'href': '#kasprappserviceaccounttemplate', label: 'KasprAppServiceAccountTemplate'},
+      '{}',
+      'Template for the ServiceAccount resource created for the application.',
+      'No'
+    ],
+    [
+      'pod',
+      {'href': '#kasprapppodtemplate', label: 'KasprAppPodTemplate'},
+      '{}',
+      'Template for the application Pod.',
+      'No'
+    ],
+    [
+      'service',
+      {'href': '#kasprappservicetemplate', label: 'KasprAppServiceTemplate'},
+      '{}',
+      'Template for the Service resource created for the application.',
+      'No'
+    ],
+    [
+      'kasprContainer',
+      {'href': '#kasprappkasprcontainertemplate', label: 'KasprAppKasprContainerTemplate'},
+      '{}',
+      'Template for the main Kaspr container.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppTemplateMetadata
+
+Metadata subset used by resource templates.
+
+<OptionTable
+  options={[
+    [
+      'labels',
+      'object',
+      '{}',
+      'Labels added to the Kubernetes resource as key-value pairs.',
+      'No'
+    ],
+    [
+      'annotations',
+      'object',
+      '{}',
+      'Annotations added to the Kubernetes resource as key-value pairs.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppServiceAccountTemplate
+
+Template for the ServiceAccount resource created for a `KasprApp`.
+
+<OptionTable
+  options={[
+    [
+      'metadata',
+      {'href': '#kasprapptemplatemetadata', label: 'KasprAppTemplateMetadata'},
+      '{}',
+      'Metadata applied to the ServiceAccount resource.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppPodTemplate
+
+Template for the Pod created for a `KasprApp`.
+
+<OptionTable
+  options={[
+    [
+      'metadata',
+      {'href': '#kasprapptemplatemetadata', label: 'KasprAppTemplateMetadata'},
+      '{}',
+      'Metadata applied to the Pod resource.',
+      'No'
+    ],
+    [
+      'imagePullSecrets',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#localobjectreference-v1-core', label: 'LocalObjectReference[]'},
+      '[]',
+      'List of references to secrets in the same namespace to use for pulling any of the images used by this Pod.',
+      'No'
+    ],
+    [
+      'securityContext',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#podsecuritycontext-v1-core', label: 'PodSecurityContext'},
+      '{}',
+      'Configures pod-level security attributes and common container settings.',
+      'No'
+    ],
+    [
+      'terminationGracePeriodSeconds',
+      'integer',
+      '30',
+      'The grace period in seconds between sending the termination signal and forcefully stopping the Pod. Value must be a non-negative integer.',
+      'No'
+    ],
+    [
+      'nodeSelector',
+      'object',
+      '{}',
+      'Node selector to use for scheduling the Pod. If not specified, the Pod will be scheduled on any available node.',
+      'No'
+    ],
+    [
+      'affinity',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#affinity-v1-core', label: 'Affinity'},
+      '{}',
+      'The Pod\'s affinity rules.',
+      'No'
+    ],
+    [
+      'tolerations',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#toleration-v1-core', label: 'Toleration[]'},
+      '[]',
+      'The Pod\'s tolerations.',
+      'No'
+    ],
+    [
+      'topologySpreadConstraints',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#topologyspreadconstraint-v1-core', label: 'TopologySpreadConstraint[]'},
+      '[]',
+      'The Pod\'s topology spread constraints.',
+      'No'
+    ],
+    [
+      'priorityClassName',
+      'string',
+      '',
+      'The name of the priority class used to assign priority to the Pod.',
+      'No'
+    ],
+    [
+      'schedulerName',
+      'string',
+      '',
+      'The name of the scheduler used to dispatch this Pod. If not specified, the default scheduler is used.',
+      'No'
+    ],
+    [
+      'hostAliases',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#hostalias-v1-core', label: 'HostAlias[]'},
+      '[]',
+      'Optional list of hosts and IPs injected into the Pod\'s hosts file.',
+      'No'
+    ],
+    [
+      'enableServiceLinks',
+      'boolean',
+      '',
+      'Indicates whether information about services should be injected into Pod environment variables.',
+      'No'
+    ],
+    [
+      'volumes',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volume-v1-core', label: 'Volume[]'},
+      '[]',
+      'Additional volumes that can be mounted to the Pod.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppServiceTemplate
+
+Template for the Service resource created for a `KasprApp`.
+
+<OptionTable
+  options={[
+    [
+      'metadata',
+      {'href': '#kasprapptemplatemetadata', label: 'KasprAppTemplateMetadata'},
+      '{}',
+      'Metadata applied to the Service resource.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppKasprContainerTemplate
+
+Template for the main Kaspr container.
+
+<OptionTable
+  options={[
+    [
+      'env',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvar-v1-core', label: 'EnvVar[]'},
+      '[]',
+      'Environment variables applied to the container.',
+      'No'
+    ],
+    [
+      'securityContext',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#securitycontext-v1-core', label: 'SecurityContext'},
+      '{}',
+      'Security context for the container.',
+      'No'
+    ],
+    [
+      'volumeMounts',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumemount-v1-core', label: 'VolumeMount[]'},
+      '[]',
+      'Additional volume mounts applied to the container.',
+      'No'
+    ]
   ]}
 />
 
