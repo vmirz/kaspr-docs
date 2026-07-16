@@ -1471,6 +1471,8 @@ Reference to a `KasprTable` and how it is made available to a task operation fun
 
 Configuration for sending a Kafka message from a task operation.
 
+By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` to preserve the original input value after publishing. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)`.
+
 <OptionTable
   options={[
     [
@@ -1485,6 +1487,13 @@ Configuration for sending a Kafka message from a task operation.
       {'href': '#code', label: 'Code'},
       '',
       'Custom code to dynamically determine the topic name. Required unless `name` is provided.',
+      'No'
+    ],
+    [
+      'passThrough',
+      'boolean',
+      'false',
+      'Preserve the original input value for downstream pipeline steps after publishing. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)`.',
       'No'
     ],
     [
@@ -1579,7 +1588,14 @@ A web view provides an HTTP endpoint to a `KasprApp`, enabling remote access to 
       '',
       "Describes the web view's response output.",
       'No'
-    ],      
+    ],
+    [
+      'processors',
+      {'href': '#kasprwebviewprocessors', label: 'KasprWebViewProcessors'},
+      '{}',
+      'Sequence of operations that run while handling the HTTP request.',
+      'Yes'
+    ],
 
   ]}
 />
@@ -1604,6 +1620,191 @@ Specification for the web view request endpoint.
       "Web path to listen on.",
       'Yes'
     ]   
+  ]}
+/>
+
+## KasprWebViewProcessors
+
+Chain of processors that run when a web request executes.
+
+<OptionTable
+  options={[
+    [
+      'pipeline',
+      'list',
+      '[]',
+      'Sequence of operations to run.',
+      'Yes'
+    ],
+    [
+      'init',
+      {'href': '#code', label: 'Code'},
+      '{}',
+      'Initialization code to run before web view operations are invoked.',
+      'No'
+    ],
+    [
+      'operations',
+      'list',
+      '[]',
+      'Chain of operations to run while handling the request.',
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprWebViewProcessorOperation
+
+A transform or action to take when a web request executes.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'A unique name for the operation. This is used to identify the operation in the pipeline.',
+      'Yes'
+    ],
+    [
+      'tables',
+      {'href': '#kasprwebviewprocessoroperationtable', label: 'KasprWebViewProcessorOperationTable[]'},
+      '',
+      "List of tables which are made available in the operation's function.",
+      'No'
+    ],
+    [
+      'map',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Takes the current request value and returns the next value passed to the rest of the pipeline.',
+      'No'
+    ],
+    [
+      'filter',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Takes the current request value and determines if execution should continue. If the filter returns `true`, the value is passed forward; otherwise it is discarded.',
+      'No'
+    ],
+    [
+      'topicSend',
+      {'href': '#kasprwebviewtopicsend', label: 'KasprWebViewTopicSend'},
+      '',
+      'Send a message to a Kafka topic as part of the operation.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprWebViewProcessorOperationTable
+
+Reference to a `KasprTable` and how it is made available to a web view operation function.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'The name of the `KasprTable` resource.',
+      'Yes'
+    ],
+    [
+      'paramName',
+      'string',
+      '',
+      "The name of the parameter in which the table is made available in the operation's function.",
+      'Yes'
+    ]
+  ]}
+/>
+
+## KasprWebViewTopicSend
+
+Configuration for sending a Kafka message from a web view operation.
+
+By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` to preserve the original input value after publishing. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)`.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Topic name. Required unless `nameSelector` is provided.',
+      'No'
+    ],
+    [
+      'nameSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to dynamically determine the topic name. Required unless `name` is provided.',
+      'No'
+    ],
+    [
+      'passThrough',
+      'boolean',
+      'false',
+      'Preserve the original input value for downstream pipeline steps after publishing. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)`.',
+      'No'
+    ],
+    [
+      'ack',
+      'boolean',
+      'false',
+      'Wait for broker acknoledgement before considering the message sent.',
+      'No'
+    ],
+    [
+      'keySerializer',
+      'string',
+      'raw',
+      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Serializer for the value portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'keySelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the key of the message. The code must define a function that takes a single argument and returns a value.',
+      'No'
+    ],
+    [
+      'valueSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the value of the message. The code must define a function that takes a single argument and returns a value.',
+      'No'
+    ],
+    [
+      'partitionSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the partition number of the message. The code must define a function that takes a single argument and returns an integer.',
+      'No'
+    ],
+    [
+      'headersSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the headers of the message. The code must define a function that takes a single argument and returns a key and value map.',
+      'No'
+    ],
+    [
+      'predicate',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` are skipped.',
+      'No'
+    ]
   ]}
 />
 
