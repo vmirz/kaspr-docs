@@ -153,6 +153,13 @@ Templates for Kubernetes resources created for a `KasprApp`.
       '{}',
       'Template for the main Kaspr container.',
       'No'
+    ],
+    [
+      'pythonPackagesInitContainer',
+      {'href': '#kasprapppythonpackagesinitcontainertemplate', label: 'KasprAppPythonPackagesInitContainerTemplate'},
+      '{}',
+      'Template for the Python packages init container.',
+      'No'
     ]
   ]}
 />
@@ -320,9 +327,9 @@ Template for the main Kaspr container.
   options={[
     [
       'env',
-      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#envvar-v1-core', label: 'EnvVar[]'},
+      {'href': '#kasprappcontainerenvvar', label: 'KasprAppContainerEnvVar[]'},
       '[]',
-      'Environment variables applied to the container.',
+      'Environment variables applied to the container. Supports literal `value` or `valueFrom` using `secretKeyRef`, `configMapKeyRef`, or `fieldRef`.',
       'No'
     ],
     [
@@ -337,6 +344,119 @@ Template for the main Kaspr container.
       {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumemount-v1-core', label: 'VolumeMount[]'},
       '[]',
       'Additional volume mounts applied to the container.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppPythonPackagesInitContainerTemplate
+
+Template for the Python packages init container.
+
+<OptionTable
+  options={[
+    [
+      'env',
+      {'href': '#kasprappcontainerenvvar', label: 'KasprAppContainerEnvVar[]'},
+      '[]',
+      'Environment variables applied to the init container. Supports literal `value` or `valueFrom` using `secretKeyRef`, `configMapKeyRef`, or `fieldRef`.',
+      'No'
+    ],
+    [
+      'securityContext',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#securitycontext-v1-core', label: 'SecurityContext'},
+      '{}',
+      'Security context for the init container.',
+      'No'
+    ],
+    [
+      'volumeMounts',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#volumemount-v1-core', label: 'VolumeMount[]'},
+      '[]',
+      'Additional volume mounts applied to the init container.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppContainerEnvVar
+
+Environment variable definition used in KasprApp container templates.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Environment variable name.',
+      'Yes'
+    ],
+    [
+      'value',
+      'string',
+      '',
+      'Literal value of the environment variable. Must be set exclusively with `valueFrom`.',
+      'No'
+    ],
+    [
+      'valueFrom',
+      {'href': '#kasprappcontainerenvvarsource', label: 'KasprAppContainerEnvVarSource'},
+      '',
+      'Source for the environment variable value. Must be set exclusively with `value`, and must define exactly one of `secretKeyRef`, `configMapKeyRef`, or `fieldRef`.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppContainerEnvVarSource
+
+Source reference for template environment variables.
+
+<OptionTable
+  options={[
+    [
+      'secretKeyRef',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#secretkeyselector-v1-core', label: 'SecretKeySelector'},
+      '',
+      'Selects a value from a Kubernetes Secret key.',
+      'No'
+    ],
+    [
+      'configMapKeyRef',
+      {'href': 'https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.26/#configmapkeyselector-v1-core', label: 'ConfigMapKeySelector'},
+      '',
+      'Selects a value from a Kubernetes ConfigMap key.',
+      'No'
+    ],
+    [
+      'fieldRef',
+      {'href': '#kasprappfieldrefselector', label: 'KasprAppFieldRefSelector'},
+      '',
+      'Selects a value from Pod fields via the Kubernetes downward API.',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppFieldRefSelector
+
+Downward API field selector for template environment variables.
+
+<OptionTable
+  options={[
+    [
+      'fieldPath',
+      'string',
+      '',
+      'Path of the Pod field to select (for example, `metadata.name`).',
+      'Yes'
+    ],
+    [
+      'apiVersion',
+      'string',
+      '',
+      'API version of the schema the `fieldPath` is written against.',
       'No'
     ]
   ]}
