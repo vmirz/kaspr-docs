@@ -711,6 +711,13 @@ Specification of the desired behavior of the KasprAgent.
       'No'
     ],
     [
+      'isolatedPartitions',
+      'boolean',
+      'false',
+      'If true, the agent runs one worker per assigned input topic partition instead of using the default shared-consumer mode. This is useful when processing depends on partition-local ordering or state.',
+      'No'
+    ],
+    [
       'input',
       {'href': '#kaspragentinput', label: 'KasprAgentInput'},
       '{}',

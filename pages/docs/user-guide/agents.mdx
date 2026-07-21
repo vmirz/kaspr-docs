@@ -72,6 +72,39 @@ kubectl apply -f echo-agent.yaml
 
 ---
 
+## Partition Isolation
+
+Set `spec.isolatedPartitions: true` when an agent should process each assigned Kafka partition in isolation.
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: partition-local-agent
+spec:
+  isolatedPartitions: true
+  input:
+    topic:
+      name: orders
+  processors:
+    pipeline:
+      - normalize
+    operations:
+      - name: normalize
+        map:
+          python: |
+            def normalize(value):
+                return value
+```
+
+With partition isolation enabled, the runtime starts a dedicated agent worker for each input partition assigned to the pod. When Kafka rebalances partitions, workers for revoked partitions are stopped and workers for newly assigned partitions are started.
+
+Use this mode when your processing depends on partition-local ordering or partition-scoped state. Leave it disabled for the default shared-consumer behavior.
+
+<Callout type="warning">`isolatedPartitions` only applies to partitioned topic input. It has no effect for channel input, and it should not be combined with agent concurrency greater than 1.</Callout>
+
+---
+
 
 ## Components of a KasprAgent
 
