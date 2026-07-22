@@ -120,6 +120,8 @@ spec:
 
 This pattern is useful when the task itself is only responsible for triggering work, while normal `KasprAgent` resources perform the heavier downstream processing.
 
+For task pipelines, `passThrough: true` means the input value to `topicSend` is also used as the output value for the next pipeline step. That is separate from `predicate`: if `predicate` returns `False`, the send is skipped but the pipeline still continues with the same input when `passThrough` is enabled. Use a `filter` operation when you need to stop the pipeline branch.
+
 ## Cron Task
 
 Use `schedule.cron` when the task should run on a calendar-based schedule.

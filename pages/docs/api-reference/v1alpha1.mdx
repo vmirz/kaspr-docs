@@ -1028,7 +1028,14 @@ A transform or action to take on input events.
       '',
       "Takes an input value and determines if the event is eligible to be passed down to the next operation or the agent's output. If the filter function returns `true`, the event is passed down, otherwise it is discarded.",
       'No'
-    ]    
+    ],
+    [
+      'topicSend',
+      {'href': '#kaspragenttopicsend', label: 'KasprAgentTopicSend'},
+      '',
+      'Send a message to a Kafka topic as part of the operation.',
+      'No'
+    ]
   ]}
 />
 
@@ -1051,6 +1058,96 @@ Reference to a `KasprTable` and how it is made available to an operation's funct
       '',
       "The name of the parameter in which the table is made available in the operation's function.",
       'Yes'
+    ]
+  ]}
+/>
+
+## KasprAgentTopicSend
+
+Configuration for sending a Kafka message from an agent operation.
+
+By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` when the input value to the `topicSend` operation should also be used as the output value for the next pipeline step. With `passThrough: true`, the pipeline continues with the original input whether the message was sent or skipped by `predicate`. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)` when a send occurs.
+
+When the agent is using `input.take`, selectors still receive the current pipeline value. For buffered pipelines that value is typically a batch object or list, and `context["event"]` is a list of source events aligned with the buffered values.
+
+<OptionTable
+  options={[
+    [
+      'name',
+      'string',
+      '',
+      'Topic name. Required unless `nameSelector` is provided.',
+      'No'
+    ],
+    [
+      'nameSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to dynamically determine the topic name. Required unless `name` is provided.',
+      'No'
+    ],
+    [
+      'passThrough',
+      'boolean',
+      'false',
+      'Use the input value to the `topicSend` operation as the output value for the next pipeline step. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)` when a send occurs.',
+      'No'
+    ],
+    [
+      'ack',
+      'boolean',
+      'false',
+      'Wait for broker acknoledgement before considering the message sent.',
+      'No'
+    ],
+    [
+      'keySerializer',
+      'string',
+      'raw',
+      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'valueSerializer',
+      'string',
+      'json',
+      'Serializer for the value portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'keySelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the key of the message. The code must define a function that takes the current pipeline value and returns a value.',
+      'No'
+    ],
+    [
+      'valueSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the value of the message. The code must define a function that takes the current pipeline value and returns a value.',
+      'No'
+    ],
+    [
+      'partitionSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the partition number of the message. The code must define a function that takes the current pipeline value and returns an integer.',
+      'No'
+    ],
+    [
+      'headersSelector',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to select the headers of the message. The code must define a function that takes the current pipeline value and returns a key and value map.',
+      'No'
+    ],
+    [
+      'predicate',
+      {'href': '#code', label: 'Code'},
+      '',
+      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` skip the send. Predicate does not discard the pipeline value; use `filter` operations when you need to stop the pipeline branch.',
+      'No'
     ]
   ]}
 />
@@ -1598,7 +1695,7 @@ Reference to a `KasprTable` and how it is made available to a task operation fun
 
 Configuration for sending a Kafka message from a task operation.
 
-By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` to preserve the original input value after publishing. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)`.
+By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` when the input value to the `topicSend` operation should also be used as the output value for the next pipeline step. With `passThrough: true`, the pipeline continues with the original input whether the message was sent or skipped by `predicate`. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)` when a send occurs.
 
 <OptionTable
   options={[
@@ -1620,7 +1717,7 @@ By default, `topicSend` publishes the selected record and does not pass a downst
       'passThrough',
       'boolean',
       'false',
-      'Preserve the original input value for downstream pipeline steps after publishing. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)`.',
+      'Use the input value to the `topicSend` operation as the output value for the next pipeline step. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)` when a send occurs.',
       'No'
     ],
     [
@@ -1676,7 +1773,7 @@ By default, `topicSend` publishes the selected record and does not pass a downst
       'predicate',
       {'href': '#code', label: 'Code'},
       '',
-      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` are skipped.',
+      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` skip the send. Predicate does not discard the pipeline value; use `filter` operations when you need to stop the pipeline branch.',
       'No'
     ]
   ]}
@@ -1851,7 +1948,7 @@ Reference to a `KasprTable` and how it is made available to a web view operation
 
 Configuration for sending a Kafka message from a web view operation.
 
-By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` to preserve the original input value after publishing. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)`.
+By default, `topicSend` publishes the selected record and does not pass a downstream value to the next pipeline step. Set `passThrough: true` when the input value to the `topicSend` operation should also be used as the output value for the next pipeline step. With `passThrough: true`, the pipeline continues with the original input whether the message was sent or skipped by `predicate`. When `ack: true` and `passThrough: true` are both enabled, the downstream value becomes a tuple of `(originalValue, ackMetadata)` when a send occurs.
 
 <OptionTable
   options={[
@@ -1873,7 +1970,7 @@ By default, `topicSend` publishes the selected record and does not pass a downst
       'passThrough',
       'boolean',
       'false',
-      'Preserve the original input value for downstream pipeline steps after publishing. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)`.',
+      'Use the input value to the `topicSend` operation as the output value for the next pipeline step. If `ack` is also `true`, the downstream value becomes `(originalValue, ackMetadata)` when a send occurs.',
       'No'
     ],
     [
@@ -1929,7 +2026,7 @@ By default, `topicSend` publishes the selected record and does not pass a downst
       'predicate',
       {'href': '#code', label: 'Code'},
       '',
-      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` are skipped.',
+      'Custom code to be used to determine if the message should be sent. Predicates that return `true` are sent, while those that return `false` skip the send. Predicate does not discard the pipeline value; use `filter` operations when you need to stop the pipeline branch.',
       'No'
     ]
   ]}

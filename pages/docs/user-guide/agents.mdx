@@ -210,7 +210,7 @@ The *heart* of a KasprAgent is its processors section, which defines the transfo
 A processor pipeline is:
 
 - Declared as a sequence of named operations
-- Backed by user-defined Python `map` and/or `filter` functions
+- Backed by user-defined Python `map`, `filter`, and optional `topicSend` side effects
 - Optional `tables` can be attached for stateful logic
 
 Example:
@@ -239,6 +239,63 @@ processors:
 ```
 
 <Callout type="tip">Keep processor functions stateless unless you use tables for stateful logic.</Callout>
+
+
+#### topicSend in Agent Pipelines
+
+Use `topicSend` inside a processor operation when the agent needs to publish a Kafka side effect from the middle of the pipeline.
+
+- Use `filter` when you want to discard the pipeline value.
+- Use `predicate` on `topicSend` when you only want to decide whether a Kafka message should be sent.
+- Use `passThrough: true` when the input value to `topicSend` should also be the output value passed to the next operation.
+- With `passThrough: true`, the pipeline continues with the original input whether the send happened or was skipped by `predicate`.
+- With `passThrough: false`, `topicSend` behaves as a terminal side effect for that pipeline branch.
+
+Example:
+
+```yaml
+processors:
+  pipeline:
+    - prepare
+    - publish-schema-proposal
+    - finalize
+  operations:
+    - name: prepare
+      map:
+        python: |
+          def prepare(value):
+              return {
+                  "original": value,
+                  "schema_proposal": {
+                      "entity": value["entity"],
+                      "schema": value.get("candidate_schema"),
+                  },
+              }
+    - name: publish-schema-proposal
+      topicSend:
+        name: schema-proposals
+        passThrough: true
+        predicate:
+          python: |
+            def should_send(value):
+                return value["schema_proposal"]["schema"] is not None
+        keySelector:
+          python: |
+            def select_key(value):
+                return value["schema_proposal"]["entity"]
+        valueSelector:
+          python: |
+            def select_value(value):
+                return value["schema_proposal"]
+    - name: finalize
+      map:
+        python: |
+          def finalize(value):
+              value["original"]["schema_proposal_checked"] = True
+              return value["original"]
+```
+
+In this pattern, `predicate` decides whether the side-effect publish happens, while `passThrough` decides whether the pipeline continues with the same input value.
 
 
 #### Initialization
