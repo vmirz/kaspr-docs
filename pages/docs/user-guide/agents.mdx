@@ -120,9 +120,9 @@ You can also set `declare: true` to have the agent auto-create the topic if miss
 
 ```yaml
 input:
+  declare: true
   topic:
     name: my-topic
-    declare: true
     keySerializer: json
     valueSerializer: json
 ```
@@ -179,6 +179,7 @@ KasprAgents can emit output to:
 
 Each output target can define:
 
+- `declare: true` to automatically create missing topics or channels
 - `keySelector`, `valueSelector`, and optional `headersSelector`
 - `predicate` for filtering what values to allow to pass through
 - `partitionSelector` for custom partitioning
@@ -190,6 +191,7 @@ Example:
 output:
   topics:
     - name: my-output-topic
+      declare: true
       keySelector:
         python: |
           def get_key(value):
@@ -199,6 +201,8 @@ output:
           def should_send(value):
               return "id" in value
 ```
+
+<Callout type="tip">Use `declare: true` to automatically create missing topics or channels.</Callout>
 
 <Callout type="tip">Use predicates to filter which events are sent to output topics.</Callout>
 

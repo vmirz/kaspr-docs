@@ -884,6 +884,13 @@ Output topic configuration for the KasprAgent.
       'Yes'
     ],
     [
+      'declare',
+      'boolean',
+      'false',
+      'If true, the topic is declared lazily before the first publish.',
+      'No'
+    ],
+    [
       'ack',
       'boolean',
       'false',
@@ -902,6 +909,48 @@ Output topic configuration for the KasprAgent.
       'string',
       'json',
       'Serializer for the value portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'No'
+    ],
+    [
+      'partitions',
+      'integer',
+      '',
+      'Number of partitions to use when declaring the topic.',
+      'No'
+    ],
+    [
+      'retention',
+      'integer',
+      '',
+      'Retention period for the topic in seconds when declaring it.',
+      'No'
+    ],
+    [
+      'compacting',
+      'boolean',
+      '',
+      'Whether log compaction is enabled when declaring the topic.',
+      'No'
+    ],
+    [
+      'deleting',
+      'boolean',
+      '',
+      'Whether log deletion is enabled when declaring the topic.',
+      'No'
+    ],
+    [
+      'replicas',
+      'integer',
+      '',
+      'Number of replicas to use when declaring the topic.',
+      'No'
+    ],
+    [
+      'config',
+      'map[string,string]',
+      '{}',
+      'Additional broker topic configuration applied when declaring the topic.',
       'No'
     ],
     [
