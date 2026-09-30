@@ -469,6 +469,62 @@ Downward API field selector for template environment variables.
 <OptionTable
   options={[
     [
+      'brokerRequestTimeout',
+      'integer',
+      '180',
+      'Kafka client request timeout, in seconds. It must not be less than `brokerSessionTimeout`.',
+      'No'
+    ],
+    [
+      'brokerCommitEvery',
+      'integer',
+      '10000',
+      'Commit offsets after this many fully processed messages.',
+      'No'
+    ],
+    [
+      'brokerCommitInterval',
+      'integer',
+      '2',
+      'How often fully processed messages are committed, in seconds.',
+      'No'
+    ],
+    [
+      'brokerHeartbeatInterval',
+      'integer',
+      '3',
+      'How often the worker sends heartbeats to the broker, in seconds.',
+      'No'
+    ],
+    [
+      'brokerSessionTimeout',
+      'integer',
+      '120',
+      'How long the broker waits for a worker to remain responsive before removing it from the consumer group, in seconds.',
+      'No'
+    ],
+    [
+      'brokerRebalanceTimeout',
+      'integer',
+      '60',
+      'How long a worker has to revoke partitions, flush state, and rejoin the consumer group during a rebalance, in seconds.',
+      'No'
+    ],
+    [
+      'brokerMaxPollRecords',
+      'integer',
+      '100',
+      'Maximum number of records returned by a single call to `poll()`.',
+      'No'
+    ],
+    [
+      'brokerMaxPollInterval',
+      'integer',
+      '1000',
+      'Maximum time allowed between calls to `poll()` before the consumer is considered failed, in seconds.',
+      'No'
+    ],
+    [
       'topicReplicationFactor',
       'integer',
       '3',
