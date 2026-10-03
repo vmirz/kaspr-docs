@@ -469,6 +469,13 @@ Downward API field selector for template environment variables.
 <OptionTable
   options={[
     [
+      'tableStalePurgeDiskUsageThreshold',
+      'number:float',
+      '0.8',
+      'Disk usage fraction (0-1) checked after the first non-empty partition assignment. Above this threshold, Kaspr removes stale table databases oldest first. Set to `0` to disable.',
+      'No'
+    ],
+    [
       'brokerRequestTimeout',
       'integer',
       '180',
@@ -654,49 +661,49 @@ Downward API field selector for template environment variables.
       'storeRocksdbWriteBufferSize',
       'integer',
       '67108864',
-      "This is the maximum write buffer size. It represents the amount of data to build up in memory before converting to a sorted on-disk file. The default is 64 MB.",
+      "Maximum size of each write buffer (memtable), in bytes, before it is flushed to an SST. The default is 64 MiB. This is the app-wide default for RocksDB tables; a table's `options` can override it.",
       'No'
     ], 
     [
       'storeRocksdbMaxWriteBufferNumber',
       'integer',
       '3',
-      "Maximum number of write buffers (memtables) that can be built in memory at the same time.",
+      "Maximum number of write buffers (memtables) per RocksDB database. This is the app-wide default; a table's `options` can override it.",
       'No'
     ],
     [
       'storeRocksdbTargetFileSizeBase',
       'integer',
       '67108864',
-      "Target size for files at level-1 in the LSM tree. Used to determine the size of the SST (Sorted String Table) files that RocksDB generates during compactions. The default is 64 MB.",
+      "Target size, in bytes, for level-1 SST files produced during compaction. The default is 64 MiB. This is the app-wide default; a table's `options` can override it.",
       'No'
     ],
     [
       'storeRocksdbBlockCacheSize',
       'integer',
       '',
-      "Size for caching uncompressed data. Defauls to about 30% of application's total memory budget",
+      "Block-cache size in bytes for uncompressed data. Defaults to one third of the container memory limit (or host memory when no container limit is available). The cache is shared across the app's tables and partitions.",
       'No'
     ],
     [
       'storeRocksdbBlockCacheCompressedSize',
       'integer',
       '268435456',
-      "Size for caching compressed data. Defaults to 254MB.",
+      "Block-cache size in bytes for compressed data. The default is 256 MiB.",
       'No'
     ],
     [
       'storeRocksdbBloomFilterSize',
       'integer',
       '3',
-      "A Bloom filter in RocksDB is used to quickly check whether a key might be in an SST (Sorted String Table) file without actually reading the file, which can significantly improve read performance.",
+      "Bloom-filter bits per key. The default is 3 bits per key.",
       'No'
     ],
     [
       'storeRocksdbSetCacheIndexAndFilterBlocks',
       'boolean',
-      '3',
-      "If set to true, index and filter blocks will be stored in block cache, together with all other data blocks.",
+      'false',
+      "Whether to store index and filter blocks in the block cache with data blocks. The default is `false`.",
       'No'
     ],
     [
@@ -1492,7 +1499,7 @@ Specification of a KasprTable resource.
       'options',
       'object',
       '{}',
-      'Advanced table configuration options.',
+      "Advanced RocksDB options as string key-value pairs. Supported keys: `max_open_files`, `write_buffer_size`, `max_write_buffer_number`, `target_file_size_base`, `block_cache_size`, `block_cache_compressed_size`, `bloom_filter_size`, `set_cache_index_and_filter_blocks`, `prefix_extractor_enabled`, and `prefix_max_length`. These override the corresponding app-wide `storeRocksdb*` defaults where applicable. Unknown or invalid options are ignored with a warning.",
       'No'
     ],
     [
