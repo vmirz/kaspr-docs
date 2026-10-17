@@ -781,6 +781,13 @@ Specification of the desired behavior of the KasprAgent.
       'No'
     ],
     [
+      'noack',
+      'boolean',
+      'false',
+      'If true, disables automatic event acknowledgments after processing. For kafka events, this provides manual control over offset commitments. Offsets become commitable only after events are manually acknowledged via `event.ack()`',
+      'No'
+    ],
+    [
       'input',
       {'href': '#kaspragentinput', label: 'KasprAgentInput'},
       '{}',
