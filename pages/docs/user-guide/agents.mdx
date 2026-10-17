@@ -64,32 +64,6 @@ spec:
                 return value
 ```
 
-### Manual Event Acknowledgment
-
-Set `spec.noack: true` to disable automatic event acknowledgments after processing. For kafka events, tablehis provices manual control over offset commitments. The agent will no longer automatically commit offsets upon processing events, instead use `event.ack()` to manually acknowledge an event. An acknowledged event's offset becomes eligible for commitment.
-
-
-```yaml
-apiVersion: kaspr.io/v1alpha1
-kind: KasprAgent
-metadata:
-  name: noack-agent
-spec:
-  noack: true
-  input:
-    topic:
-      name: demo-input
-  processors:
-    pipeline:
-      - echo
-    operations:
-      - name: echo
-        map:
-          python: |
-            def echo(value):
-                return value
-```
-
 Apply it using:
 
 ```bash
@@ -581,7 +555,6 @@ spec:
                 event.ack() # manually acknowledged
                 return value
 ```
----
 
 ### Partitioning and Routing
 
