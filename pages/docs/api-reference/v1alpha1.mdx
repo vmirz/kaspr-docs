@@ -37,9 +37,25 @@ A program that runs components of a distributed stream processing application.
       '{}',
       'Metadata that all persisted resources must have.',
       'Yes'
-    ]                             
+    ],
+    [
+      'spec',
+      {'href': '#kasprappspec', label: 'KasprAppSpec'},
+      '{}',
+      'Specification of the desired settings of the application.',
+      'Yes'
+    ],
+    [
+      'status',
+      {'href': '#kasprappstatus', label: 'KasprAppStatus'},
+      '{}',
+      'Most recently observed state of the application, written by the operator.',
+      'No'
+    ]
   ]}
 />
+
+A `KasprApp` has a [scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource): it reads `spec.replicas`, `status.replicas` and `status.selector`. `kubectl scale kasprapp <name> --replicas=<n>` changes the number of instances, and autoscalers such as a VerticalPodAutoscaler can target a `KasprApp`.
 
 ## KasprAppSpec
 
@@ -58,7 +74,7 @@ Specification of the desired settings of the application.
       'replicas',
       'integer',
       '1',
-      'The number of desired instances.',
+      'The number of desired instances. Also read and written through the scale subresource.',
       'No'
     ],
     [
@@ -111,12 +127,156 @@ Specification of the desired settings of the application.
       'No'
     ],
     [
+      'verticalPodAutoscaler',
+      {'href': '#verticalpodautoscalerspec', label: 'VerticalPodAutoscalerSpec'},
+      '',
+      'A VerticalPodAutoscaler the operator creates and manages for the application, to set the resources of its Kaspr container from their usage. Opt-in: nothing is created unless `enabled` is `true`.',
+      'No'
+    ],
+    [
       'template',
       {'href': '#kasprapptemplate', label: 'KasprAppTemplate'},
       '',
       'Templates for Kubernetes resources created for the application, including the ServiceAccount, Pod, Service, Kaspr container and more.',
       'No'
     ],                               
+  ]}
+/>
+
+## VerticalPodAutoscalerSpec
+
+Settings of the [VerticalPodAutoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) the operator manages for a `KasprApp`, named `<app>-app-vpa` and owned by the app. It controls only the Kaspr container. It requires the Vertical Pod Autoscaler (`autoscaling.k8s.io/v1`) in the cluster: without it, the application runs with `resources` as set, and the `VerticalPodAutoscalerReady` condition says why there is none. See [Vertical Pod Autoscaling](/docs/user-guide/vertical-pod-autoscaling).
+
+<OptionTable
+  options={[
+    [
+      'enabled',
+      'boolean',
+      'false',
+      'Create and manage a VerticalPodAutoscaler for the application. No other setting has an effect without it.',
+      'No'
+    ],
+    [
+      'updateMode',
+      'string',
+      'InPlaceOrRecreate',
+      'How recommendations are applied: `Off` (recommendations only), `Initial` (new pods only), `Recreate` (pods are evicted to apply them), `InPlaceOrRecreate` (running pods are resized in place, and recreated only when that is impossible; Kubernetes 1.33+ and VPA 1.4+), `InPlace` (in place only; needs the VPA `InPlace` feature gate) or `Auto` (deprecated alias of `Recreate`).',
+      'No'
+    ],
+    [
+      'controlledResources',
+      'string[]',
+      '["cpu"]',
+      'Resources the VerticalPodAutoscaler sets: `cpu`, `memory`, or both. With `memory`, the Kaspr container restarts on a memory resize, since Kaspr sizes its RocksDB block cache from the memory limit when it starts; adding or removing `memory` restarts the application\'s pods once.',
+      'No'
+    ],
+    [
+      'controlledValues',
+      'string',
+      'RequestsOnly',
+      '`RequestsOnly` sets requests and keeps the limits in `resources` as ceilings. `RequestsAndLimits` sets both, keeping their ratio.',
+      'No'
+    ],
+    [
+      'minAllowed',
+      'object',
+      '',
+      'Lowest requests the VerticalPodAutoscaler may set, as `cpu` and `memory` quantities, e.g. `{cpu: 100m}`.',
+      'No'
+    ],
+    [
+      'maxAllowed',
+      'object',
+      '',
+      'Highest requests the VerticalPodAutoscaler may set, as `cpu` and `memory` quantities, e.g. `{cpu: "1500m"}`.',
+      'No'
+    ],
+    [
+      'minReplicas',
+      'integer',
+      '',
+      'Fewest running instances that allow the VerticalPodAutoscaler to evict one. Defaults to the VPA updater\'s `--min-replicas` (2).',
+      'No'
+    ]
+  ]}
+/>
+
+## KasprAppStatus
+
+Most recently observed state of a `KasprApp`, written by the operator.
+
+<OptionTable
+  options={[
+    [
+      'observedGeneration',
+      'integer',
+      '',
+      'The generation of the spec the status describes.',
+      ''
+    ],
+    [
+      'kasprVersion',
+      'string',
+      '',
+      'Kaspr version the application runs.',
+      ''
+    ],
+    [
+      'availableMembers',
+      'string',
+      '',
+      'Ready instances out of the desired ones, e.g. `2/3`.',
+      ''
+    ],
+    [
+      'replicas',
+      'integer',
+      '',
+      'Number of instances the application\'s StatefulSet runs. Reported as `status.replicas` of the scale subresource.',
+      ''
+    ],
+    [
+      'selector',
+      'string',
+      '',
+      'Label selector of the application\'s pods, in string form. Reported as `status.selector` of the scale subresource, by which autoscalers find the pods.',
+      ''
+    ],
+    [
+      'rolloutInProgress',
+      'boolean',
+      '',
+      'Whether a rollout of the application\'s pods is in progress.',
+      ''
+    ],
+    [
+      'members',
+      'object[]',
+      '',
+      'State of each instance: `id`, `leader`, `rebalancing`, `recovering`, and when it last changed.',
+      ''
+    ],
+    [
+      'rebalancingMembers',
+      'string',
+      '',
+      'Instances currently rebalancing out of the available ones.',
+      ''
+    ],
+    [
+      'rebalanceRequired',
+      'boolean',
+      '',
+      'Whether a change of the application\'s subscriptions requires a rebalance that has not taken effect yet.',
+      ''
+    ],
+    [
+      'conditions',
+      'object[]',
+      '',
+      'Standard conditions: `Ready`, `Progressing`, `PythonPackagesReady` (while `pythonPackages` is set) and `VerticalPodAutoscalerReady` (while `verticalPodAutoscaler.enabled` is `true`). `VerticalPodAutoscalerReady` is `True` with reason `Configured` when the VerticalPodAutoscaler matches the spec, and `False` with reason `NotInstalled`, `Forbidden`, `Invalid`, `Conflict`, `ConfigUnsupported` or `Error` otherwise.',
+      ''
+    ]
   ]}
 />
 
