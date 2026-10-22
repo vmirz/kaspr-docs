@@ -1,0 +1,114 @@
+import { Callout } from 'nextra/components'
+
+# Vertical Pod Autoscaling
+
+## Overview
+
+A `KasprApp` can ask the operator for a [VerticalPodAutoscaler](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler) (VPA), which sets the resources of the app's Kaspr container from their observed usage. It is opt-in: the operator creates nothing unless `verticalPodAutoscaler.enabled` is `true`.
+
+<Callout type="info">
+The Vertical Pod Autoscaler is a cluster add-on (`autoscaling.k8s.io/v1`). The operator does not assume it is installed: without it, apps that enable vertical autoscaling run with the resources in their spec, and report why in the `VerticalPodAutoscalerReady` condition.
+</Callout>
+
+---
+
+## When to use it
+
+Vertical autoscaling suits apps whose event flow is volatile and unpredictable: bursts of many events that take long to process, in apps with large partitioned tables. Such apps are best spread across many instances, so that a burst is processed by all of them. But traffic is not always heavy, and instances sized for the bursts leave pods and CPU idle the rest of the time. Adding and removing instances as the traffic changes is costly too: every partition that moves to another instance must first replay its tables' changelogs there to rebuild its state, which for large tables is slow and wasteful.
+
+A VerticalPodAutoscaler keeps such an app scaled out, and adjusts the CPU its instances request to their utilization instead. Instances are resized in place: they keep running and keep their partitions, so neither the app nor its event flow is disrupted.
+
+To set it up:
+
+- Keep `replicas` at the number of instances the bursts need (at most the number of partitions).
+- Set the CPU limit in `resources` to what an instance may use in a burst. With the default `controlledValues: RequestsOnly`, it stays the ceiling.
+- Enable the VerticalPodAutoscaler with the default `updateMode: InPlaceOrRecreate`. It follows usage over time rather than single spikes: the limit lets instances burst above their request while their node has CPU to spare, and the VPA keeps the CPU they reserve close to what they use.
+
+---
+
+## Quick Start
+
+```yaml
+apiVersion: kaspr.io/v1alpha1
+kind: KasprApp
+metadata:
+  name: orders
+spec:
+  replicas: 3
+  bootstrapServers: kafka:9092
+  resources:                  # what pods start with
+    requests: {cpu: 500m, memory: 1Gi}
+    limits: {cpu: "2", memory: 2Gi}
+  verticalPodAutoscaler:
+    enabled: true
+    minAllowed: {cpu: 100m}
+    maxAllowed: {cpu: 1500m}
+  storage:
+    type: persistent-claim
+    size: 1Gi
+```
+
+The operator creates a VerticalPodAutoscaler named `orders-app-vpa`, owned by the app (it goes away with the app, or when `enabled` is turned off). By default it sets only the CPU requests of the Kaspr container (`controlledValues: RequestsOnly`, so the limits stay ceilings), and applies them to running pods in place (`updateMode: InPlaceOrRecreate`). All settings are in the [API reference](/docs/api-reference/v1alpha1#verticalpodautoscalerspec).
+
+```bash
+kubectl get kasprapp orders -o jsonpath='{.status.conditions[?(@.type=="VerticalPodAutoscalerReady")]}'
+kubectl describe vpa orders-app-vpa     # recommendations
+```
+
+---
+
+## Will pods restart?
+
+The VPA never edits the `KasprApp` or its StatefulSet. It sets the recommended requests on each pod as it is created, and changes running pods whose requests drift out of the recommended range:
+
+| `updateMode` | Running pods |
+|---|---|
+| `Off` | Left alone; recommendations only. |
+| `Initial` | Left alone; new pods get the recommendation. |
+| `Recreate` | Evicted (at most half at a time) and recreated with the new requests. |
+| `InPlaceOrRecreate` | Resized in place, without a restart, and recreated only when that is impossible. Needs Kubernetes 1.33+ and VPA 1.4+. |
+| `InPlace` | Resized in place only. Needs the VPA's `InPlace` feature gate. |
+
+Changing `spec.resources` yourself restarts every pod, one at a time, as with any pod template change.
+
+<Callout type="warning">
+Apps with a single replica are never evicted by the VPA under its default `--min-replicas` of 2. Apps without resource requests start pods without any, which cannot get requests in place: each pod is recreated once first.
+</Callout>
+
+---
+
+## CPU and memory
+
+**CPU** resizes take effect at once: the app does not need to notice them. A Kaspr worker runs its agents, serialization and Kafka client in one asyncio event loop under Python's GIL, so it uses about one core for them; more CPU only helps work outside that loop (RocksDB background threads, native libraries that release the GIL, child processes). Set `maxAllowed` near what the app can use, and add replicas for more throughput.
+
+**Memory** is not autoscaled by default. Kaspr sizes its RocksDB block cache from the container's memory limit when it starts, so a memory limit changed in place would go unnoticed until the next restart. With `controlledResources: [cpu, memory]`, the operator makes the container restart on memory resizes (`resizePolicy`), which changes the pod template and restarts the app's pods once.
+
+---
+
+## Status
+
+| `VerticalPodAutoscalerReady` | Reason | Meaning |
+|---|---|---|
+| `True` | `Configured` | The VerticalPodAutoscaler matches the spec. |
+| `False` | `NotInstalled` | The cluster does not serve `autoscaling.k8s.io/v1`; it is checked again every minute. |
+| `False` | `Forbidden` | The operator may not manage `verticalpodautoscalers.autoscaling.k8s.io` (the operator chart grants it). |
+| `False` | `Invalid` | The VerticalPodAutoscaler was rejected, e.g. an `updateMode` the installed VPA does not know. |
+| `False` | `Conflict` | A VerticalPodAutoscaler of that name exists that the app does not own. |
+| `False` | `ConfigUnsupported` | The VPA reports it cannot use its configuration. |
+| `False` | `Error` | Any other failure. |
+
+None of these keep the app from running. Changes of the condition are also posted as events on the app.
+
+---
+
+## The scale subresource
+
+`KasprApp` has a scale subresource, so `kubectl scale kasprapp orders --replicas=5` works and other autoscalers can target a `KasprApp`. A VerticalPodAutoscaler you write yourself must target the `KasprApp`, not its StatefulSet:
+
+```yaml
+spec:
+  targetRef:
+    apiVersion: kaspr.io/v1alpha1
+    kind: KasprApp
+    name: orders
+```

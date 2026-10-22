@@ -8,6 +8,7 @@ export default {
   joins: "Joins - Table-to-Table Joins",
   webviews: "Webviews - Web interfaces for stream processing",
   "python-packages": "Python Packages - Dependency Management",
+  "vertical-pod-autoscaling": "Vertical Pod Autoscaling - Right-sizing Apps",
   patterns: "Agent Patterns - Common Use Cases",
   scheduler: {
     title: "Scheduler - Delayed Event Handling",
