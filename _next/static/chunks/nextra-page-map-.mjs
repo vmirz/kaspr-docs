@@ -131,6 +131,12 @@ export const pageMap = [{
         "sidebarTitle": "Tasks"
       }
     }, {
+      name: "vertical-pod-autoscaling",
+      route: "/docs/user-guide/vertical-pod-autoscaling",
+      frontMatter: {
+        "sidebarTitle": "Vertical Pod Autoscaling"
+      }
+    }, {
       name: "webviews",
       route: "/docs/user-guide/webviews",
       frontMatter: {
