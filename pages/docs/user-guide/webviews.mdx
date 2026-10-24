@@ -276,6 +276,29 @@ map:
         return request
 ```
 
+### Errors in Another Content Type
+
+Error responses use `contentType` unless `errorContentType` says otherwise. A WebView that answers
+binary data, such as a Parquet file, can still answer its errors as JSON:
+
+```yaml
+response:
+  contentType: application/octet-stream
+  errorContentType: application/json
+  bodySelector:
+    onSuccess:
+      python: |
+        def body(data):
+            return data["parquet"]
+    onError:
+      python: |
+        def error(err):
+            return {"error": {"message": err["message"]}}
+```
+
+`onSuccess` returns bytes, sent as `application/octet-stream`; `onError` returns an object, sent as
+JSON. Without `errorContentType`, `onError` would have to return bytes too.
+
 ### Async vs Sync Functions
 
 - Functions may be `async def` when awaiting I/O (e.g., reading request JSON)
