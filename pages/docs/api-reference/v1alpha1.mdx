@@ -1031,8 +1031,8 @@ Input topic configuration for the KasprAgent.
     [
       'keySerializer',
       'string',
-      'raw',
-      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`.',
+      'app default',
+      'Serializer for the key portion of the kafka message. Must be one of `raw`, `json`, `pickle`, or `binary`. Defaults to the `keySerializer` of the app (`raw`).',
       'No'
     ],
     [
@@ -1637,8 +1637,8 @@ Specification of a KasprTable resource.
     [
       'keySerializer',
       'string',
-      'raw',
-      'Serializer for the table key. Must be `raw` or `json`.',
+      'json',
+      'Serializer for the table key. Must be `raw` or `json`. A joined table needs the key serializer of the topic that fills it.',
       'No'
     ],
     [

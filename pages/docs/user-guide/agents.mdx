@@ -530,7 +530,7 @@ map:
 
 ### Manual Event Acknowledgment
 
-Set `spec.noack: true` to disable automatic event acknowledgments after processing. For kafka events, thisprovices manual control over offset commitments. When enabled, an event must be manually acknowledged via `event.ack()` to be able to commit its offset.
+Set `spec.noack: true` to disable automatic event acknowledgments after processing. For kafka events, this provides manual control over offset commitments. When enabled, an event must be manually acknowledged via `event.ack()` to be able to commit its offset. For a join's output channel, `event.ack()` lets the join commit the result.
 
 
 ```yaml
@@ -562,15 +562,18 @@ Kafka partitioning is automatically leveraged if your input topics are partition
 
 You may also implement *repartitioning* by emitting records with a newly computed key via `keySelector` and routing to a new topic.
 
+### Delivery Guarantees
+
+An event's offset is committed only once every message its processing sent — to output topics, table changelogs and joins — has been delivered to Kafka. After a crash, events processed since the last commit are processed again, so outputs are delivered at least once: make consumers idempotent. If a message sent while processing an event cannot be delivered, the app stops instead of committing.
+
 ### Processing Failures
 
-When a KasprAgent encounters an exception during event processing, the system maintains exactly-once semantics by acknowledging the source message and not reprocessing it. While this prevents duplicate processing, it raises the question of what happens to failed events.
+When a KasprAgent encounters an exception during event processing, the system acknowledges the source message and does not reprocess it. While this prevents duplicate processing, it raises the question of what happens to failed events.
 
 There are several approaches to handling failed events, each with trade-offs:
 
 **Acknowledgment (Current Behavior)**
 - The failed message is acknowledged and marked as complete
-- Ensures exactly-once processing semantics
 - Failed events are not reprocessed automatically
 
 **Retry Strategies**
@@ -644,12 +647,14 @@ spec:
           entrypoint: process
           python: |
             def process(value):
-                left_record = value["left"]
-                right_record = value["right"]
+                if value is None:  # retraction of the left key's result
+                    return {"key": context["event"].key, "deleted": True}
+                left_record = value.left
+                right_record = value.right or {}
                 return {"merged": {**left_record, **right_record}}
 ```
 
-The joined value has the structure `{"left": ..., "right": ...}` where `left` is the record from the left table and `right` is the matching record from the right table. See the [Joins guide](/docs/user-guide/joins) for full details.
+Each event is keyed by the left record's key. Its value is a `JoinedValue` named tuple, where `value.left` is the record from the left table and `value.right` is the matching record from the right table, or `None`: a retraction, when the left record no longer has a result. See the [Joins guide](/docs/user-guide/joins) for full details.
 
 <Callout type="info">The channel name must exactly match the `outputChannel` (or default `{name}-channel`) defined on the `KasprJoin` resource.</Callout>
 

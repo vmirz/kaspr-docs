@@ -11,10 +11,10 @@ Joins allow you to correlate records across two tables using keys, where a key c
 
 **Key Features:**
 - Declarative YAML configuration — no Python code beyond a small extractor function
-- Reactive — changes on either side trigger re-emission of joined results
-- No co-partitioning required — left and right tables can have different keys
+- Reactive — changes on either side trigger re-emission of joined results, and retractions of results that no longer hold
+- Left and right tables can have different keys and partition counts
 - Supports `inner` and `left` join semantics
-- Output is a named channel consumable by any `KasprAgent`
+- Output is a named channel consumable by any `KasprAgent`, keyed by the left record's key
 
 ---
 
@@ -26,7 +26,7 @@ A join uses an internal subscription/response protocol to efficiently join two t
 2. A subscription message is sent to the right table's partition that owns that key
 3. The right-side task stores the subscription and looks up the current right value
 4. A response is sent back to the left table's partition
-5. The left-side task combines both values into a `JoinedValue` and emits it to the output channel
+5. The left-side task combines both values into a `JoinedValue` and emits it to the output channel, or emits a retraction when the left record no longer has a result
 
 This process is fully automatic — Kaspr manages the internal topics, stores, and callbacks.
 
@@ -46,7 +46,7 @@ Internal subscription and response topics are auto-created by the runtime. You d
 
 ### Step 1: Define Two Tables
 
-First, create the tables you want to join:
+First, create the tables you want to join. Each is filled by an agent from a topic keyed the same way as the table (see [Key Serializers and Joins](#key-serializers-and-joins)):
 
 ```yaml
 apiVersion: kaspr.io/v1alpha1
@@ -96,6 +96,10 @@ spec:
   outputChannel: orders-products-joined
 ```
 
+<Callout type="info">
+A `KasprJoin` reaches the app's pods only when the `KasprApp` has the annotation `kaspr.io/definitions-delivery: bundle`.
+</Callout>
+
 ### Step 3: Consume the Join Channel
 
 Create a `KasprAgent` that reads from the join's output channel:
@@ -124,8 +128,10 @@ spec:
           entrypoint: enrich_order
           python: |
             def enrich_order(value):
-                order = value["left"]
-                product = value["right"]
+                if value is None:  # a retraction: the order has no result now
+                    return {"order_id": context["event"].key, "deleted": True}
+                order = value.left
+                product = value.right
                 return {
                     "order_id": order.get("order_id"),
                     "product_name": product.get("name"),
@@ -155,17 +161,21 @@ type: inner
 
 Only emits a `JoinedValue` when **both** sides have a matching record. If the right table has no entry for the extracted key, no output is produced.
 
+A result that no longer holds is retracted: when the left record is deleted, its extracted key becomes `None` or a key with no right record, or its right record is deleted.
+
 ### Left Join
 
 ```yaml
 type: left
 ```
 
-Always emits a `JoinedValue` when the left table changes. If the right table has no match, `right` will be `null`:
+Always emits a `JoinedValue` when the left table changes, including when the extractor returns `None`. If the right table has no match, `right` will be `null`:
 
 ```json
 {"left": {"order_id": "123", "product_id": "P999"}, "right": null}
 ```
+
+A deleted left record is retracted.
 
 <Callout type="tip">
 Use `left` joins when you want to process all left-side changes even when the right side hasn't been populated yet.
@@ -175,29 +185,32 @@ Use `left` joins when you want to process all left-side changes even when the ri
 
 ## JoinedValue Format
 
-The output channel emits events with the following structure:
-
-```json
-{
-  "left": { ... },
-  "right": { ... }
-}
-```
+The output channel emits events keyed by the left record's key (`context["event"].key`), with a `JoinedValue` as the value:
 
 - **`left`** — The full record from the left table
-- **`right`** — The matching record from the right table (or `null` for left joins with no match)
+- **`right`** — The matching record from the right table (or `None` for left joins with no match)
+
+A **retraction** has the value `None`: the left record identified by the event's key no longer has a result. Treat it as a delete of that key.
 
 Access these in your agent's processor:
 
 ```python
 def process(value):
-    order = value["left"]       # left table record
-    product = value["right"]    # right table record (or None)
+    if value is None:          # retraction
+        return {"order_id": context["event"].key, "deleted": True}
+    order = value.left         # left table record
+    product = value.right      # right table record (or None)
     return {
         "order_id": order.get("order_id"),
         "product_name": product.get("name") if product else "Unknown",
     }
 ```
+
+`JoinedValue` is a named tuple: use `value.left` and `value.right`, not `value["left"]`.
+
+### Delivery
+
+The join commits a result only once every agent reading the channel has acknowledged it: after processing it, or with `event.ack()` when the agent sets `noack: true`. A result lost to a restart, a stop or a rebalance before then is emitted again, so results are delivered at least once: process them idempotently, by the left record's key.
 
 ---
 
@@ -236,35 +249,29 @@ extractor:
 ```
 
 <Callout type="warning">
-The extractor must return a value that matches a key in the right table. If it returns `None`, no join will be performed for that record.
+The extractor must return a value that matches a key in the right table. If it returns `None`, the record has no match: an inner join emits nothing for it (and retracts an earlier result), a left join emits it with `right` as `None`.
 </Callout>
 
 ---
 
 ## Key Serializers and Joins
 
-For joins to work, the key serialization used by the input topic must match the key serialization used by the table written by that agent.
-
-### Why Serializers Matter
-
-The join works by extracting a key from the left table's value and performing a lookup in the right table. For this lookup to succeed, the key stored in the right table must be encoded the same way as the extracted key.
-
-Consider two agents writing to the `orders` and `products` tables:
-
-- With `json` serialization, `event.key` is a deserialized Python value (e.g., `"P100"`)
-- With `raw` serialization, `event.key` is raw bytes (e.g., `b'"P100"'`)
-
-When you write `table[event.key] = value`, the table stores whatever type `event.key` is. If the table's `keySerializer` is `json` but the input topic uses `raw`, a raw-bytes key that already contains JSON quotes gets **double-encoded** — stored as `"\"P100\""` instead of `"P100"`.
-
-Later, the extractor returns a clean value like `"P100"`, but the lookup searches for `"P100"` — which doesn't match the double-encoded `"\"P100\""` in the table.
+A join finds a table's row by its key alone, on the partition that key hashes to. A row is stored on the partition of the record that wrote it, so the two must agree.
 
 ### The Rule
 
 <Callout type="error">
-The `keySerializer` on an agent's input topic must match the `keySerializer` on the table that the agent writes to.
+The `keySerializer` on an agent's input topic must match the `keySerializer` on the joined table that the agent uses. Unset, a topic's is the app's `keySerializer` (`raw` by default) and a table's is `json`.
 </Callout>
 
-If they do not match, key lookups fail even when the logical key values look the same.
+The app refuses to start when they differ, naming the agent, the table and both serializers. Changing a table's `keySerializer` changes how its rows are stored: reset the table and refill it from its topic.
+
+Two more requirements, checked as each row is written:
+
+- Write each row under the key of the record being processed, as in the example below.
+- Produce the topic partitioned by key the way Kafka's default partitioner does (murmur2). Java clients and aiokafka do. librdkafka-based clients (confluent-kafka, kcat) need `partitioner=murmur2_random`.
+
+A row that would be stored where the join does not look for it stops the app with a `KeyPlacementError`. The record that wrote it is not committed, so it is processed again once the app is fixed.
 
 Example of matching configuration:
 
@@ -302,9 +309,9 @@ spec:
 | Input Topic `keySerializer` | Table `keySerializer` | `event.key` Type | Join Works? |
 |---|---|---|---|
 | `json` | `json` | Python object (str, int, etc.) | Yes |
-| `raw` | `json` | Raw bytes | No — double-encoded keys |
-| `raw` | `raw` | Raw bytes | Yes (but extractor must return bytes) |
-| `json` | `raw` | Python object | No — type mismatch |
+| `raw` | `raw` | Raw bytes | Yes — keys must be UTF-8 text; the extractor may return `str` or `bytes` |
+| `raw` | `json` | Raw bytes | No — the app refuses to start |
+| `json` | `raw` | Python object | No — the app refuses to start |
 
 ---
 
@@ -381,21 +388,23 @@ You can create a `KasprJoin` before its referenced tables exist. The operator wi
 
 ## Full Example: Order Enrichment
 
-This complete example shows an order enrichment pipeline using a key join:
+This complete example shows an order enrichment pipeline using a key join. The topics `raw-orders` and `raw-products` hold records keyed by `order_id` and `product_id` as plain strings, with the tables' partition count:
 
 ```yaml
-# 1. App
+# 1. App: joins are delivered to the app's pods in definitions bundles
 apiVersion: kaspr.io/v1alpha1
 kind: KasprApp
 metadata:
   name: order-system
+  annotations:
+    kaspr.io/definitions-delivery: bundle
 spec:
   replicas: 3
   bootstrapServers: kafka-bootstrap:9092
   storage:
     size: 5Gi
 ---
-# 2. Orders table
+# 2. Orders table, keyed like raw-orders
 apiVersion: kaspr.io/v1alpha1
 kind: KasprTable
 metadata:
@@ -405,8 +414,9 @@ metadata:
 spec:
   name: orders
   partitions: 6
+  keySerializer: raw
 ---
-# 3. Products table
+# 3. Products table, keyed like raw-products
 apiVersion: kaspr.io/v1alpha1
 kind: KasprTable
 metadata:
@@ -416,8 +426,62 @@ metadata:
 spec:
   name: products
   partitions: 6
+  keySerializer: raw
 ---
-# 4. Key join
+# 4. Agents filling the tables, each row under its record's key
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: ingest-orders
+  labels:
+    kaspr.io/app: order-system
+spec:
+  input:
+    topic:
+      name: raw-orders
+      keySerializer: raw
+  processors:
+    pipeline:
+      - store
+    operations:
+      - name: store
+        tables:
+          - name: orders
+            paramName: orders
+        map:
+          entrypoint: store
+          python: |
+            def store(value, orders):
+                orders[context["event"].key] = value
+                return value
+---
+apiVersion: kaspr.io/v1alpha1
+kind: KasprAgent
+metadata:
+  name: ingest-products
+  labels:
+    kaspr.io/app: order-system
+spec:
+  input:
+    topic:
+      name: raw-products
+      keySerializer: raw
+  processors:
+    pipeline:
+      - store
+    operations:
+      - name: store
+        tables:
+          - name: products
+            paramName: products
+        map:
+          entrypoint: store
+          python: |
+            def store(value, products):
+                products[context["event"].key] = value
+                return value
+---
+# 5. Key join
 apiVersion: kaspr.io/v1alpha1
 kind: KasprJoin
 metadata:
@@ -436,7 +500,7 @@ spec:
   type: inner
   outputChannel: orders-products-joined
 ---
-# 5. Agent consuming the joined stream
+# 6. Agent consuming the joined stream
 apiVersion: kaspr.io/v1alpha1
 kind: KasprAgent
 metadata:
@@ -467,8 +531,10 @@ spec:
           entrypoint: enrich_order
           python: |
             def enrich_order(value):
-                order = value["left"]
-                product = value["right"]
+                if value is None:  # retraction; raw keys are bytes
+                    return {"order_id": context["event"].key.decode(), "deleted": True}
+                order = value.left
+                product = value.right
                 return {
                     "order_id": order.get("order_id"),
                     "product_id": order.get("product_id"),
@@ -484,5 +550,5 @@ spec:
 1. Raw orders arrive on `raw-orders` topic → ingested into `orders` table
 2. Raw products arrive on `raw-products` topic → ingested into `products` table
 3. When an order is written, its `product_id` is extracted and used to look up the product
-4. A `JoinedValue` containing both the order and product is emitted to `orders-products-joined`
-5. The `process-enriched-orders` agent picks up the joined value and produces an enriched record to `enriched-orders`
+4. A `JoinedValue` containing both the order and product is emitted to `orders-products-joined`, keyed by the order's key; an order with no result any more is retracted
+5. The `process-enriched-orders` agent picks up the joined value and produces an enriched record (or a `deleted` record) to `enriched-orders`
